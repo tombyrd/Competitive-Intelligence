@@ -1,4 +1,4 @@
-# EV Charging Booking — Email setup (Resend)
+# EV Charging Booking — Email setup (Gmail)
 
 This adds two emails, both sent to everyone in the `admins` table:
 
@@ -8,23 +8,31 @@ This adds two emails, both sent to everyone in the `admins` table:
 2. **Daily 7am digest** — a list of the day's approved bookings. (Edge Function
    `daily-digest`, fired by a `pg_cron` schedule.)
 
-Both functions live in `supabase/functions/` and send via [Resend](https://resend.com).
+Both functions live in `supabase/functions/` and send through **Gmail SMTP** — no
+domain verification or IT involvement needed.
+
+> Emails arrive from a `@gmail.com` address. For an internal tool that's usually fine;
+> if you later want them to come from `@ifs.com`, that's a domain-verification job for IT.
 
 ---
 
-## Step 1 — Resend account + sender
+## Step 1 — Pick a Gmail account + create an App Password
 
-1. Sign up at <https://resend.com> (free tier ≈ 3,000 emails/month).
-2. **Sending address — pick one:**
-   - **Verify a domain** (recommended): Resend → **Domains** → add a domain you
-     control and add the DNS records it shows. Then you can send from e.g.
-     `bookings@yourdomain.com`. This is the only way the emails reliably land in
-     `@ifs.com` inboxes rather than spam, so it's worth doing — your IT team can
-     add the DNS records if you don't manage them.
-   - **Test sender** (quick start): skip domain verification and send from
-     `onboarding@resend.dev`. Fine for testing, but corporate mail filters often
-     quarantine it — don't rely on it for go-live.
-3. **API Keys** → create a key → copy it (starts `re_…`).
+Use a Gmail account to send from. **Tip:** create a dedicated free account (e.g.
+`ifs.ev.staines@gmail.com`) rather than a personal one, so it's clearly purpose-made.
+
+1. On that Google account, turn on **2-Step Verification**:
+   Google Account → **Security** → **2-Step Verification** → follow the steps.
+   (App Passwords are only available once 2FA is on.)
+2. Create an **App Password**:
+   Google Account → **Security** → **2-Step Verification** → **App passwords**
+   (or go to <https://myaccount.google.com/apppasswords>).
+   - Name it `EV booking` and create it.
+   - Google shows a **16-character password** (like `abcd efgh ijkl mnop`).
+     Copy it — **remove the spaces** when you paste it as a secret.
+
+> If the account is a **Google Workspace** account, your Workspace admin may need to
+> allow App Passwords. A personal `@gmail.com` account avoids that.
 
 ## Step 2 — Edge Function secrets
 
@@ -33,9 +41,9 @@ add:
 
 | Name | Value |
 |------|-------|
-| `RESEND_API_KEY` | your `re_…` key |
-| `EV_FROM_EMAIL`  | `IFS EV Charging <bookings@yourdomain.com>` (or omit to use the test sender) |
-| `EV_ADMIN_URL`   | `https://tombyrd.github.io/Competitive-Intelligence/ev-booking/admin.html` (optional) |
+| `GMAIL_USER` | the sending Gmail address, e.g. `ifs.ev.staines@gmail.com` |
+| `GMAIL_APP_PASSWORD` | the 16-char App Password, **no spaces** |
+| `EV_ADMIN_URL` | `https://tombyrd.github.io/Competitive-Intelligence/ev-booking/admin.html` (optional) |
 
 (`SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are provided automatically.)
 
@@ -77,7 +85,7 @@ Now every new booking emails facilities.
 ## Step 6 — Test
 
 - **New-booking email:** submit a booking on the form → facilities should get an email
-  within seconds. (Check Resend → **Logs** if not.)
+  within seconds.
 - **Digest:** run it on demand to test without waiting for 7am —
   ```sql
   select net.http_post(
@@ -85,11 +93,13 @@ Now every new booking emails facilities.
     headers := jsonb_build_object('Content-Type','application/json','Authorization','Bearer YOUR-ANON-PUBLIC-KEY'),
     body := '{}'::jsonb);
   ```
+- If an email doesn't arrive: Supabase → Edge Functions → pick the function → **Logs**.
+  A Gmail auth error there usually means 2FA isn't on or the App Password has spaces in it.
 
 ---
 
 ### Notes
 - Emails go to **all** rows in `admins`, so add/remove recipients by editing that table.
-- Function logs: Supabase → Edge Functions → pick the function → **Logs**. Delivery
-  logs: Resend → **Logs**.
-- The free Resend tier is ample here; no card required to start.
+- Gmail's send limit (~500/day) is far more than this tool will ever use.
+- The App Password is stored only as a Supabase secret — it's never in the page source
+  or the repo, and you can revoke it anytime from the Google account.

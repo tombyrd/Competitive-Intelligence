@@ -1,15 +1,17 @@
 // Supabase Edge Function: daily-digest
 // Triggered by pg_cron at 07:00 UTC daily (see email-setup.sql).
-// Emails every facilities admin the list of bookings for today.
+// Emails every facilities admin the list of bookings for today. Sends via Gmail SMTP.
 //
 // Required secrets (same as notify-new-booking):
-//   RESEND_API_KEY, EV_FROM_EMAIL (optional), EV_ADMIN_URL (optional)
+//   GMAIL_USER, GMAIL_APP_PASSWORD, EV_ADMIN_URL (optional)
 // SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are injected automatically.
 
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { SMTPClient } from "https://deno.land/x/denomailer@1.6.0/mod.ts";
 
-const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY")!;
-const FROM = Deno.env.get("EV_FROM_EMAIL") ?? "IFS EV Charging <onboarding@resend.dev>";
+const GMAIL_USER = Deno.env.get("GMAIL_USER")!;
+const GMAIL_APP_PASSWORD = Deno.env.get("GMAIL_APP_PASSWORD")!;
+const FROM = `IFS EV Charging <${GMAIL_USER}>`;
 const ADMIN_URL = Deno.env.get("EV_ADMIN_URL")
   ?? "https://tombyrd.github.io/Competitive-Intelligence/ev-booking/admin.html";
 
@@ -25,15 +27,19 @@ async function adminEmails(): Promise<string[]> {
 }
 
 async function sendEmail(to: string[], subject: string, html: string) {
-  const res = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: {
-      "Authorization": `Bearer ${RESEND_API_KEY}`,
-      "Content-Type": "application/json",
+  const client = new SMTPClient({
+    connection: {
+      hostname: "smtp.gmail.com",
+      port: 465,
+      tls: true,
+      auth: { username: GMAIL_USER, password: GMAIL_APP_PASSWORD },
     },
-    body: JSON.stringify({ from: FROM, to, subject, html }),
   });
-  if (!res.ok) throw new Error(`Resend ${res.status}: ${await res.text()}`);
+  try {
+    await client.send({ from: FROM, to, subject, html, content: "auto" });
+  } finally {
+    await client.close();
+  }
 }
 
 function esc(s: unknown): string {
