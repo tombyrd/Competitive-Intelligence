@@ -1,0 +1,6 @@
+# Local preview scaffolding (not part of the deliverable)
+.claude/
+
+# Test data copies
+dataset.json
+dataset_*.json
