@@ -12,12 +12,16 @@ create table if not exists bookings (
   id          uuid primary key default gen_random_uuid(),
   name        text not null,
   phone       text not null,
+  reg         text,
   bay         smallint not null check (bay in (1, 2)),
   date        date not null,
   slot        text not null,
   status      text not null default 'pending' check (status in ('pending','approved','rejected')),
   created_at  timestamptz not null default now()
 );
+
+-- Add the vehicle registration column to an existing table (no-op if present).
+alter table bookings add column if not exists reg text;
 
 -- Safety net: only ONE approved booking per bay + date + slot (no double-booking).
 create unique index if not exists uniq_approved_slot
@@ -73,6 +77,11 @@ create policy "admins read all" on bookings
 -- Only admins can approve / reject.
 create policy "admins update" on bookings
   for update using (is_admin()) with check (is_admin());
+
+-- Only admins can cancel (delete) a booking.
+drop policy if exists "admins delete" on bookings;
+create policy "admins delete" on bookings
+  for delete using (is_admin());
 
 -- 5. No-PII availability view for the public booking form ────────────────────
 -- Exposes ONLY bay/date/slot of approved bookings — never names or phones.

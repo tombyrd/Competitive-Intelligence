@@ -3,14 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="theme-color" content="#15803d">
+<meta name="theme-color" content="#8427E2">
 <title>EV Charging Booking — Staines</title>
 <style>
 :root{
   --bg:#f4f6f8; --surface:#ffffff; --border:#e2e8f0; --border2:#cbd5e1;
-  --text:#0f172a; --muted:#64748b; --green:#16a34a; --green-d:#15803d;
-  --green-bg:#dcfce7; --red:#dc2626; --red-bg:#fee2e2; --amber:#b45309;
-  --ring:rgba(22,163,74,.25);
+  --text:#0f172a; --muted:#64748b; --brand:#8427E2; --brand-d:#6d1fc0;
+  --brand-bg:#f3e8fd; --red:#dc2626; --red-bg:#fee2e2; --amber:#b45309;
+  --ring:rgba(132,39,226,.25);
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%}
@@ -22,8 +22,9 @@ body{
 }
 .wrap{max-width:520px;margin:0 auto;padding:20px 16px 48px}
 header{display:flex;align-items:center;gap:12px;margin-bottom:8px}
-.logo{width:42px;height:42px;border-radius:12px;background:var(--green);
-  display:flex;align-items:center;justify-content:center;font-size:1.4rem;flex-shrink:0}
+.logo{width:46px;height:46px;border-radius:12px;background:var(--brand);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-size:1.05rem;font-weight:800;
+  letter-spacing:.04em;flex-shrink:0}
 header h1{font-size:1.15rem;font-weight:700;letter-spacing:-0.01em}
 header .sub{font-size:.78rem;color:var(--muted)}
 .adminlink{margin-left:auto;font-size:.72rem;color:var(--muted);text-decoration:none;border:1px solid var(--border);padding:5px 10px;border-radius:8px}
@@ -42,7 +43,7 @@ input[type=text],input[type=tel],input[type=date],select{
 }
 select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
   background-repeat:no-repeat;background-position:right 12px center;padding-right:38px}
-input:focus,select:focus{outline:none;border-color:var(--green);box-shadow:0 0 0 3px var(--ring)}
+input:focus,select:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px var(--ring)}
 input:disabled,select:disabled{background:#f1f5f9;color:var(--muted)}
 
 .bays{display:grid;grid-template-columns:1fr 1fr;gap:10px}
@@ -52,17 +53,17 @@ input:disabled,select:disabled{background:#f1f5f9;color:var(--muted)}
   padding:14px;border:1px solid var(--border2);border-radius:10px;cursor:pointer;
   font-weight:600;transition:.12s;text-align:center}
 .bay-opt span small{font-weight:400;font-size:.72rem;color:var(--muted)}
-.bay-opt input:checked + span{border-color:var(--green);background:var(--green-bg);color:var(--green-d)}
+.bay-opt input:checked + span{border-color:var(--brand);background:var(--brand-bg);color:var(--brand-d)}
 .bay-opt input:focus-visible + span{box-shadow:0 0 0 3px var(--ring)}
 
 .hint{font-size:.74rem;color:var(--muted);margin-top:6px}
 .slot-status{font-size:.74rem;margin-top:6px;min-height:1em}
 .slot-status.loading{color:var(--muted)}
-.slot-status.ok{color:var(--green-d)}
+.slot-status.ok{color:var(--brand-d)}
 
 button.submit{width:100%;padding:14px;font-size:1rem;font-weight:700;color:#fff;
-  background:var(--green);border:none;border-radius:11px;cursor:pointer;transition:.12s}
-button.submit:hover{background:var(--green-d)}
+  background:var(--brand);border:none;border-radius:11px;cursor:pointer;transition:.12s}
+button.submit:hover{background:var(--brand-d)}
 button.submit:disabled{opacity:.55;cursor:not-allowed}
 
 .error{background:var(--red-bg);color:var(--red);border:1px solid #fecaca;
@@ -72,8 +73,8 @@ button.submit:disabled{opacity:.55;cursor:not-allowed}
 /* confirmation */
 .confirm{display:none;text-align:center;padding:8px 4px}
 .confirm.show{display:block}
-.confirm .tick{width:62px;height:62px;border-radius:50%;background:var(--green-bg);
-  color:var(--green-d);display:flex;align-items:center;justify-content:center;
+.confirm .tick{width:62px;height:62px;border-radius:50%;background:var(--brand-bg);
+  color:var(--brand-d);display:flex;align-items:center;justify-content:center;
   font-size:2rem;margin:6px auto 16px}
 .confirm h2{font-size:1.25rem;margin-bottom:6px}
 .confirm .lead{color:var(--muted);font-size:.9rem;margin-bottom:18px}
@@ -85,7 +86,7 @@ button.submit:disabled{opacity:.55;cursor:not-allowed}
 .summary .row .v{font-weight:600;text-align:right}
 .badge-pending{display:inline-block;background:#fef3c7;color:var(--amber);font-weight:600;
   font-size:.72rem;padding:3px 9px;border-radius:20px}
-.linkbtn{display:inline-block;margin-top:4px;color:var(--green-d);font-weight:600;
+.linkbtn{display:inline-block;margin-top:4px;color:var(--brand-d);font-weight:600;
   font-size:.9rem;background:none;border:none;cursor:pointer;text-decoration:underline}
 
 footer{text-align:center;font-size:.7rem;color:var(--muted);margin-top:26px}
@@ -97,7 +98,7 @@ footer{text-align:center;font-size:.7rem;color:var(--muted);margin-top:26px}
 <body>
 <div class="wrap">
   <header>
-    <div class="logo">⚡</div>
+    <div class="logo">IFS</div>
     <div>
       <h1>EV Charging Booking</h1>
       <div class="sub">Staines office · 2 charging bays</div>
@@ -121,6 +122,13 @@ footer{text-align:center;font-size:.7rem;color:var(--muted);margin-top:26px}
     <div class="field">
       <label for="phone">Phone number <span class="req">*</span></label>
       <input type="tel" id="phone" name="phone" autocomplete="tel" required placeholder="So facilities can reach you">
+    </div>
+
+    <div class="field">
+      <label for="reg">Vehicle registration <span class="req">*</span></label>
+      <input type="text" id="reg" name="reg" required placeholder="e.g. AB12 CDE"
+             autocapitalize="characters" maxlength="10" style="text-transform:uppercase">
+      <div class="hint">So facilities know which car is in the bay.</div>
     </div>
 
     <div class="field">
@@ -258,12 +266,14 @@ footer{text-align:center;font-size:.7rem;color:var(--muted);margin-top:26px}
     clearError();
     const name = $("name").value.trim();
     const phone = $("phone").value.trim();
+    const reg = $("reg").value.trim().toUpperCase();
     const bay = selectedBay();
     const date = dateInput.value;
     const slot = slotSel.value;
 
     if (!name) return showError("Please enter your full name.");
     if (!phone) return showError("Please enter a phone number.");
+    if (!reg) return showError("Please enter your vehicle registration.");
     if (!bay) return showError("Please choose a charging bay.");
     if (!date) return showError("Please choose a date.");
     if (date < todayStr) return showError("Please choose today or a future date.");
@@ -281,10 +291,10 @@ footer{text-align:center;font-size:.7rem;color:var(--muted);margin-top:26px}
         return;
       }
       const { error } = await sb.from("bookings").insert({
-        name, phone, bay: Number(bay), date, slot, status:"pending"
+        name, phone, reg, bay: Number(bay), date, slot, status:"pending"
       });
       if (error) throw error;
-      showConfirmation({name, bay, date, slot});
+      showConfirmation({name, reg, bay, date, slot});
     }catch(err){
       showError("Something went wrong submitting your request. Please try again.");
       console.error(err);
@@ -299,8 +309,9 @@ footer{text-align:center;font-size:.7rem;color:var(--muted);margin-top:26px}
   }
   function showConfirmation(b){
     summary.innerHTML =
-      row("Name", b.name) + row("Bay", "Bay "+b.bay) + row("Date", prettyDate(b.date)) +
-      row("Time", b.slot) + row("Status", '<span class="badge-pending">Pending review</span>');
+      row("Name", b.name) + row("Vehicle", b.reg) + row("Bay", "Bay "+b.bay) +
+      row("Date", prettyDate(b.date)) + row("Time", b.slot) +
+      row("Status", '<span class="badge-pending">Pending review</span>');
     form.style.display = "none";
     confirmBox.classList.add("show");
     window.scrollTo({top:0, behavior:"smooth"});

@@ -3,14 +3,15 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="theme-color" content="#0f172a">
+<meta name="theme-color" content="#8427E2">
 <title>Facilities — EV Charging Admin</title>
 <style>
 :root{
   --bg:#f4f6f8; --surface:#ffffff; --border:#e2e8f0; --border2:#cbd5e1;
   --text:#0f172a; --muted:#64748b; --green:#16a34a; --green-d:#15803d;
   --green-bg:#dcfce7; --red:#dc2626; --red-bg:#fee2e2; --red-d:#b91c1c;
-  --amber:#b45309; --amber-bg:#fef3c7; --ring:rgba(22,163,74,.25);
+  --amber:#b45309; --amber-bg:#fef3c7; --ring:rgba(132,39,226,.25);
+  --brand:#8427E2; --brand-d:#6d1fc0; --brand-bg:#f3e8fd;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:var(--bg);color:var(--text);
@@ -22,15 +23,17 @@ a{color:inherit}
 .gate{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
 .gate .box{background:var(--surface);border:1px solid var(--border);border-radius:16px;
   padding:28px;max-width:360px;width:100%;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,.06)}
-.gate .logo{width:48px;height:48px;border-radius:12px;background:var(--text);color:#fff;
-  display:flex;align-items:center;justify-content:center;font-size:1.5rem;margin:0 auto 14px}
+.gate .logo{width:50px;height:50px;border-radius:13px;background:var(--brand);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-size:1.15rem;font-weight:800;
+  letter-spacing:.04em;margin:0 auto 14px}
 .gate h1{font-size:1.15rem;margin-bottom:4px}
 .gate p{color:var(--muted);font-size:.85rem;margin-bottom:18px}
 .gate input{width:100%;padding:12px;font-size:1rem;border:1px solid var(--border2);
   border-radius:10px;margin-bottom:12px;text-align:center}
-.gate input:focus{outline:none;border-color:var(--green);box-shadow:0 0 0 3px var(--ring)}
-.gate button{width:100%;padding:12px;font-weight:700;color:#fff;background:var(--text);
+.gate input:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px var(--ring)}
+.gate button{width:100%;padding:12px;font-weight:700;color:#fff;background:var(--brand);
   border:none;border-radius:10px;cursor:pointer;font-size:1rem}
+.gate button:hover{background:var(--brand-d)}
 .gate .err{color:var(--red);font-size:.82rem;min-height:1.2em;margin-bottom:6px}
 .gate .msg{color:var(--green-d);font-size:.82rem;margin-top:10px;line-height:1.4}
 .gate .back{display:inline-block;margin-top:14px;font-size:.8rem;color:var(--muted)}
@@ -38,8 +41,8 @@ a{color:inherit}
 /* ── App ── */
 #app{display:none;max-width:1080px;margin:0 auto;padding:18px 16px 60px}
 header{display:flex;align-items:center;gap:12px;margin-bottom:18px;flex-wrap:wrap}
-.logo-sm{width:40px;height:40px;border-radius:11px;background:var(--text);color:#fff;
-  display:flex;align-items:center;justify-content:center;font-size:1.3rem}
+.logo-sm{width:42px;height:42px;border-radius:11px;background:var(--brand);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-size:.95rem;font-weight:800;letter-spacing:.04em}
 header h1{font-size:1.1rem;font-weight:700}
 header .sub{font-size:.76rem;color:var(--muted)}
 header .right{margin-left:auto;display:flex;gap:8px;align-items:center}
@@ -57,7 +60,7 @@ header .right{margin-left:auto;display:flex;gap:8px;align-items:center}
 .filters{display:flex;gap:6px;flex-wrap:wrap}
 .chip{font-size:.8rem;padding:7px 13px;border:1px solid var(--border2);border-radius:20px;
   background:var(--surface);cursor:pointer;font-weight:500}
-.chip.active{background:var(--text);color:#fff;border-color:var(--text)}
+.chip.active{background:var(--brand);color:#fff;border-color:var(--brand)}
 .toolbar .spacer{flex:1}
 .sortsel{font-size:.8rem;padding:7px 10px;border:1px solid var(--border2);border-radius:8px;background:var(--surface)}
 
@@ -76,6 +79,7 @@ td.name{font-weight:600}
 .act{font-size:.76rem;font-weight:600;padding:6px 11px;border-radius:8px;border:none;cursor:pointer}
 .act.approve{background:var(--green);color:#fff} .act.approve:hover{background:var(--green-d)}
 .act.reject{background:var(--surface);color:var(--red);border:1px solid #fca5a5} .act.reject:hover{background:var(--red-bg)}
+.act.cancel{background:var(--surface);color:var(--muted);border:1px solid var(--border2)} .act.cancel:hover{background:#f1f5f9;color:var(--text)}
 .act:disabled{opacity:.5;cursor:wait}
 .muted-dash{color:var(--border2)}
 .empty{text-align:center;padding:48px 20px;color:var(--muted)}
@@ -103,7 +107,7 @@ td.name{font-weight:600}
 <!-- Login gate -->
 <div id="gate" class="gate">
   <div class="box">
-    <div class="logo">⚡</div>
+    <div class="logo">IFS</div>
     <h1>Facilities Admin</h1>
     <p>Sign in with your IFS email. We'll send you a one-time link — only approved facilities staff can get in.</p>
     <form id="gateForm">
@@ -119,7 +123,7 @@ td.name{font-weight:600}
 <!-- App -->
 <div id="app">
   <header>
-    <div class="logo-sm">⚡</div>
+    <div class="logo-sm">IFS</div>
     <div>
       <h1>EV Charging — Facilities</h1>
       <div class="sub">Staines office · review &amp; approve bookings</div>
@@ -158,10 +162,10 @@ td.name{font-weight:600}
   <div class="tablewrap">
     <table>
       <thead>
-        <tr><th>Name</th><th>Phone</th><th>Bay</th><th>Date</th><th>Time slot</th><th>Status</th><th>Actions</th></tr>
+        <tr><th>Name</th><th>Phone</th><th>Vehicle</th><th>Bay</th><th>Date</th><th>Time slot</th><th>Status</th><th>Actions</th></tr>
       </thead>
       <tbody id="tbody">
-        <tr><td colspan="7" class="loading">Loading bookings…</td></tr>
+        <tr><td colspan="8" class="loading">Loading bookings…</td></tr>
       </tbody>
     </table>
   </div>
@@ -281,6 +285,21 @@ td.name{font-weight:600}
     }
   }
 
+  async function cancelBooking(id, btn){
+    if (!sb) return;
+    if (!confirm("Cancel and permanently remove this booking? This frees the slot for others.")) return;
+    if (btn) btn.disabled = true;
+    try{
+      const { error } = await sb.from("bookings").delete().eq("id", id);
+      if (error) throw error;
+      await load();
+    }catch(e){
+      banner("Couldn't cancel that booking — please try again.");
+      console.error(e);
+      if (btn) btn.disabled = false;
+    }
+  }
+
   // ── Render ──
   function fmtDate(d){
     const dt=new Date(d+"T00:00:00");
@@ -307,25 +326,28 @@ td.name{font-weight:600}
     const tb = $("tbody");
 
     if (!rows.length){
-      tb.innerHTML = '<tr><td colspan="7" class="empty">No '+(filter==="all"?"":filter+" ")+'bookings yet.</td></tr>';
+      tb.innerHTML = '<tr><td colspan="8" class="empty">No '+(filter==="all"?"":filter+" ")+'bookings yet.</td></tr>';
       return;
     }
 
     tb.innerHTML = rows.map(b=>{
       const phone = esc(b.phone);
       let actions;
+      const cancelBtn = '<button class="act cancel" data-id="'+b.id+'" data-action="cancel">Cancel</button>';
       if (b.status==="pending"){
         actions = '<div class="actions">'+
           '<button class="act approve" data-id="'+b.id+'" data-action="approved">Approve</button>'+
-          '<button class="act reject" data-id="'+b.id+'" data-action="rejected">Reject</button></div>';
+          '<button class="act reject" data-id="'+b.id+'" data-action="rejected">Reject</button>'+
+          cancelBtn+'</div>';
       } else if (b.status==="rejected"){
-        actions = '<div class="actions"><button class="act approve" data-id="'+b.id+'" data-action="approved">Approve</button></div>';
+        actions = '<div class="actions"><button class="act approve" data-id="'+b.id+'" data-action="approved">Approve</button>'+cancelBtn+'</div>';
       } else { // approved
-        actions = '<span class="muted-dash">Locked</span>';
+        actions = '<div class="actions">'+cancelBtn+'</div>';
       }
       return '<tr>'+
         '<td class="name" data-label="Name">'+esc(b.name)+'</td>'+
         '<td class="phone" data-label="Phone"><a href="tel:'+phone+'">'+phone+'</a></td>'+
+        '<td data-label="Vehicle">'+esc(b.reg)+'</td>'+
         '<td data-label="Bay">Bay '+esc(b.bay)+'</td>'+
         '<td data-label="Date">'+fmtDate(b.date)+'</td>'+
         '<td data-label="Slot">'+esc(b.slot)+'</td>'+
@@ -335,7 +357,10 @@ td.name{font-weight:600}
     }).join("");
 
     tb.querySelectorAll(".act").forEach(btn=>{
-      btn.addEventListener("click",()=> setStatus(btn.dataset.id, btn.dataset.action, btn));
+      btn.addEventListener("click",()=>{
+        if (btn.dataset.action === "cancel") cancelBooking(btn.dataset.id, btn);
+        else setStatus(btn.dataset.id, btn.dataset.action, btn);
+      });
     });
   }
 
