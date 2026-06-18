@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#15803d">
+<title>EV Charging Booking — Staines</title>
+<style>
+:root{
+  --bg:#f4f6f8; --surface:#ffffff; --border:#e2e8f0; --border2:#cbd5e1;
+  --text:#0f172a; --muted:#64748b; --green:#16a34a; --green-d:#15803d;
+  --green-bg:#dcfce7; --red:#dc2626; --red-bg:#fee2e2; --amber:#b45309;
+  --ring:rgba(22,163,74,.25);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  background:var(--bg); color:var(--text);
+  font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  -webkit-font-smoothing:antialiased; line-height:1.5;
+  min-height:100vh; padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom);
+}
+.wrap{max-width:520px;margin:0 auto;padding:20px 16px 48px}
+header{display:flex;align-items:center;gap:12px;margin-bottom:8px}
+.logo{width:42px;height:42px;border-radius:12px;background:var(--green);
+  display:flex;align-items:center;justify-content:center;font-size:1.4rem;flex-shrink:0}
+header h1{font-size:1.15rem;font-weight:700;letter-spacing:-0.01em}
+header .sub{font-size:.78rem;color:var(--muted)}
+.adminlink{margin-left:auto;font-size:.72rem;color:var(--muted);text-decoration:none;border:1px solid var(--border);padding:5px 10px;border-radius:8px}
+.adminlink:hover{border-color:var(--border2);color:var(--text)}
+
+.card{background:var(--surface);border:1px solid var(--border);border-radius:16px;
+  padding:22px;margin-top:18px;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+
+label{display:block;font-size:.82rem;font-weight:600;margin-bottom:7px}
+label .req{color:var(--red);font-weight:700}
+.field{margin-bottom:18px}
+input[type=text],input[type=tel],input[type=date],select{
+  width:100%;padding:12px 13px;font-size:1rem;color:var(--text);
+  background:var(--surface);border:1px solid var(--border2);border-radius:10px;
+  font-family:inherit;-webkit-appearance:none;appearance:none;
+}
+select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 12px center;padding-right:38px}
+input:focus,select:focus{outline:none;border-color:var(--green);box-shadow:0 0 0 3px var(--ring)}
+input:disabled,select:disabled{background:#f1f5f9;color:var(--muted)}
+
+.bays{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.bay-opt{position:relative}
+.bay-opt input{position:absolute;opacity:0;width:0;height:0}
+.bay-opt span{display:flex;flex-direction:column;align-items:center;gap:2px;
+  padding:14px;border:1px solid var(--border2);border-radius:10px;cursor:pointer;
+  font-weight:600;transition:.12s;text-align:center}
+.bay-opt span small{font-weight:400;font-size:.72rem;color:var(--muted)}
+.bay-opt input:checked + span{border-color:var(--green);background:var(--green-bg);color:var(--green-d)}
+.bay-opt input:focus-visible + span{box-shadow:0 0 0 3px var(--ring)}
+
+.hint{font-size:.74rem;color:var(--muted);margin-top:6px}
+.slot-status{font-size:.74rem;margin-top:6px;min-height:1em}
+.slot-status.loading{color:var(--muted)}
+.slot-status.ok{color:var(--green-d)}
+
+button.submit{width:100%;padding:14px;font-size:1rem;font-weight:700;color:#fff;
+  background:var(--green);border:none;border-radius:11px;cursor:pointer;transition:.12s}
+button.submit:hover{background:var(--green-d)}
+button.submit:disabled{opacity:.55;cursor:not-allowed}
+
+.error{background:var(--red-bg);color:var(--red);border:1px solid #fecaca;
+  border-radius:10px;padding:11px 13px;font-size:.85rem;margin-bottom:16px;display:none}
+.error.show{display:block}
+
+/* confirmation */
+.confirm{display:none;text-align:center;padding:8px 4px}
+.confirm.show{display:block}
+.confirm .tick{width:62px;height:62px;border-radius:50%;background:var(--green-bg);
+  color:var(--green-d);display:flex;align-items:center;justify-content:center;
+  font-size:2rem;margin:6px auto 16px}
+.confirm h2{font-size:1.25rem;margin-bottom:6px}
+.confirm .lead{color:var(--muted);font-size:.9rem;margin-bottom:18px}
+.summary{text-align:left;background:#f8fafc;border:1px solid var(--border);border-radius:12px;
+  padding:16px;margin-bottom:18px}
+.summary .row{display:flex;justify-content:space-between;gap:14px;padding:7px 0;font-size:.9rem}
+.summary .row + .row{border-top:1px solid var(--border)}
+.summary .row .k{color:var(--muted)}
+.summary .row .v{font-weight:600;text-align:right}
+.badge-pending{display:inline-block;background:#fef3c7;color:var(--amber);font-weight:600;
+  font-size:.72rem;padding:3px 9px;border-radius:20px}
+.linkbtn{display:inline-block;margin-top:4px;color:var(--green-d);font-weight:600;
+  font-size:.9rem;background:none;border:none;cursor:pointer;text-decoration:underline}
+
+footer{text-align:center;font-size:.7rem;color:var(--muted);margin-top:26px}
+.config-warn{display:none;background:#fef3c7;border:1px solid #fde68a;color:#92400e;
+  border-radius:10px;padding:12px 14px;font-size:.82rem;margin-top:18px}
+.config-warn.show{display:block}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo">⚡</div>
+    <div>
+      <h1>EV Charging Booking</h1>
+      <div class="sub">Staines office · 2 charging bays</div>
+    </div>
+    <a class="adminlink" href="admin.html">Facilities</a>
+  </header>
+
+  <div id="configWarn" class="config-warn">
+    ⚠️ Not configured yet — open <strong>config.js</strong> and add your Supabase URL and anon key. See SETUP.md.
+  </div>
+
+  <!-- Booking form -->
+  <form id="form" class="card" novalidate>
+    <div id="error" class="error"></div>
+
+    <div class="field">
+      <label for="name">Full name <span class="req">*</span></label>
+      <input type="text" id="name" name="name" autocomplete="name" required placeholder="e.g. Jane Smith">
+    </div>
+
+    <div class="field">
+      <label for="phone">Phone number <span class="req">*</span></label>
+      <input type="tel" id="phone" name="phone" autocomplete="tel" required placeholder="So facilities can reach you">
+    </div>
+
+    <div class="field">
+      <label>Charging bay <span class="req">*</span></label>
+      <div class="bays">
+        <label class="bay-opt"><input type="radio" name="bay" value="1" required><span>Bay 1<small>Charging point</small></span></label>
+        <label class="bay-opt"><input type="radio" name="bay" value="2" required><span>Bay 2<small>Charging point</small></span></label>
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="date">Date <span class="req">*</span></label>
+      <input type="date" id="date" name="date" required>
+    </div>
+
+    <div class="field">
+      <label for="slot">Time slot <span class="req">*</span></label>
+      <select id="slot" name="slot" required disabled>
+        <option value="">Pick a bay and date first…</option>
+      </select>
+      <div id="slotStatus" class="slot-status"></div>
+    </div>
+
+    <button type="submit" class="submit" id="submitBtn">Request booking</button>
+  </form>
+
+  <!-- Confirmation -->
+  <div id="confirm" class="card confirm">
+    <div class="tick">✓</div>
+    <h2>Request submitted</h2>
+    <p class="lead">Facilities will review your request and confirm.</p>
+    <div class="summary" id="summary"></div>
+    <button class="linkbtn" id="again">Make another booking</button>
+  </div>
+
+  <footer>IFS · Internal use only</footer>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script>
+(function(){
+  const cfg = window.EV_CONFIG || {};
+  const SLOTS = window.EV_SLOTS || [];
+  const configured = cfg.SUPABASE_URL && !cfg.SUPABASE_URL.includes("YOUR-PROJECT")
+                  && cfg.SUPABASE_ANON_KEY && !cfg.SUPABASE_ANON_KEY.includes("YOUR-ANON");
+
+  const $ = id => document.getElementById(id);
+  const form=$("form"), errorBox=$("error"), slotSel=$("slot"), slotStatus=$("slotStatus"),
+        dateInput=$("date"), submitBtn=$("submitBtn"), confirmBox=$("confirm"), summary=$("summary");
+
+  let sb = null;
+  if (configured) {
+    sb = supabase.createClient(cfg.SUPABASE_URL, cfg.SUPABASE_ANON_KEY);
+  } else {
+    $("configWarn").classList.add("show");
+    submitBtn.disabled = true;
+  }
+
+  // Local YYYY-MM-DD (avoids UTC off-by-one from toISOString)
+  function localDate(d){
+    return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+  }
+  const today = new Date();
+  const todayStr = localDate(today);
+  dateInput.min = todayStr;
+  dateInput.value = todayStr;
+
+  function selectedBay(){ const r=document.querySelector('input[name="bay"]:checked'); return r?r.value:""; }
+  function slotStartHour(slot){ return parseInt(slot.slice(0,2),10); }
+
+  function showError(msg){ errorBox.textContent=msg; errorBox.classList.add("show"); }
+  function clearError(){ errorBox.classList.remove("show"); }
+
+  // Rebuild the slot dropdown based on bay + date, disabling approved + past slots.
+  async function refreshSlots(){
+    const bay = selectedBay(), date = dateInput.value;
+    slotSel.innerHTML = "";
+    if (!bay || !date){
+      slotSel.disabled = true;
+      slotSel.innerHTML = '<option value="">Pick a bay and date first…</option>';
+      slotStatus.textContent = ""; slotStatus.className="slot-status";
+      return;
+    }
+
+    let approved = [];
+    if (sb){
+      slotStatus.textContent = "Checking availability…"; slotStatus.className="slot-status loading";
+      try{
+        const { data, error } = await sb.from("bookings").select("slot")
+          .eq("bay", Number(bay)).eq("date", date).eq("status","approved");
+        if (error) throw error;
+        approved = (data||[]).map(r=>r.slot);
+      }catch(e){
+        slotStatus.textContent = "Couldn't check availability — you can still submit."; slotStatus.className="slot-status";
+      }
+    }
+
+    const isToday = date === localDate(new Date());
+    const nowHour = new Date().getHours();
+
+    slotSel.disabled = false;
+    const placeholder = document.createElement("option");
+    placeholder.value=""; placeholder.textContent="Select a time slot…";
+    slotSel.appendChild(placeholder);
+
+    let availableCount = 0;
+    SLOTS.forEach(slot=>{
+      const opt = document.createElement("option");
+      opt.value = slot;
+      const taken = approved.includes(slot);
+      const past = isToday && slotStartHour(slot) <= nowHour;
+      if (taken){ opt.disabled=true; opt.textContent = slot+"  — already booked"; }
+      else if (past){ opt.disabled=true; opt.textContent = slot+"  — passed"; }
+      else { opt.textContent = slot; availableCount++; }
+      slotSel.appendChild(opt);
+    });
+
+    if (slotStatus.className.includes("loading")) { slotStatus.textContent=""; slotStatus.className="slot-status"; }
+    if (availableCount===0){
+      slotStatus.textContent = "No slots available for this bay/date — try Bay "+(bay==="1"?"2":"1")+" or another day.";
+      slotStatus.className="slot-status";
+    } else {
+      slotStatus.textContent = availableCount+" slot"+(availableCount>1?"s":"")+" available.";
+      slotStatus.className="slot-status ok";
+    }
+  }
+
+  document.querySelectorAll('input[name="bay"]').forEach(r=>r.addEventListener("change", refreshSlots));
+  dateInput.addEventListener("change", refreshSlots);
+
+  form.addEventListener("submit", async (e)=>{
+    e.preventDefault();
+    clearError();
+    const name = $("name").value.trim();
+    const phone = $("phone").value.trim();
+    const bay = selectedBay();
+    const date = dateInput.value;
+    const slot = slotSel.value;
+
+    if (!name) return showError("Please enter your full name.");
+    if (!phone) return showError("Please enter a phone number.");
+    if (!bay) return showError("Please choose a charging bay.");
+    if (!date) return showError("Please choose a date.");
+    if (date < todayStr) return showError("Please choose today or a future date.");
+    if (!slot) return showError("Please choose a time slot.");
+    if (!sb) return showError("App is not configured — see SETUP.md.");
+
+    submitBtn.disabled = true; submitBtn.textContent = "Submitting…";
+    try{
+      // Re-check the slot wasn't approved for someone else while the form was open
+      const { data: clash } = await sb.from("bookings").select("id")
+        .eq("bay", Number(bay)).eq("date", date).eq("slot", slot).eq("status","approved");
+      if (clash && clash.length){
+        showError("Sorry, that slot was just booked. Please pick another.");
+        await refreshSlots();
+        return;
+      }
+      const { error } = await sb.from("bookings").insert({
+        name, phone, bay: Number(bay), date, slot, status:"pending"
+      });
+      if (error) throw error;
+      showConfirmation({name, bay, date, slot});
+    }catch(err){
+      showError("Something went wrong submitting your request. Please try again.");
+      console.error(err);
+    }finally{
+      submitBtn.disabled = false; submitBtn.textContent = "Request booking";
+    }
+  });
+
+  function prettyDate(d){
+    const dt = new Date(d+"T00:00:00");
+    return dt.toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short",year:"numeric"});
+  }
+  function showConfirmation(b){
+    summary.innerHTML =
+      row("Name", b.name) + row("Bay", "Bay "+b.bay) + row("Date", prettyDate(b.date)) +
+      row("Time", b.slot) + row("Status", '<span class="badge-pending">Pending review</span>');
+    form.style.display = "none";
+    confirmBox.classList.add("show");
+    window.scrollTo({top:0, behavior:"smooth"});
+  }
+  function row(k,v){ return '<div class="row"><span class="k">'+k+'</span><span class="v">'+v+'</span></div>'; }
+
+  $("again").addEventListener("click", ()=>{
+    form.reset(); dateInput.value = todayStr;
+    confirmBox.classList.remove("show"); form.style.display="block";
+    refreshSlots();
+  });
+
+  refreshSlots();
+})();
+</script>
+</body>
+</html>

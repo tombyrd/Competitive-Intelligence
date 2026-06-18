@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0f172a">
+<title>Facilities — EV Charging Admin</title>
+<style>
+:root{
+  --bg:#f4f6f8; --surface:#ffffff; --border:#e2e8f0; --border2:#cbd5e1;
+  --text:#0f172a; --muted:#64748b; --green:#16a34a; --green-d:#15803d;
+  --green-bg:#dcfce7; --red:#dc2626; --red-bg:#fee2e2; --red-d:#b91c1c;
+  --amber:#b45309; --amber-bg:#fef3c7; --ring:rgba(22,163,74,.25);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);
+  font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  -webkit-font-smoothing:antialiased;line-height:1.5;min-height:100vh}
+a{color:inherit}
+
+/* ── Login gate ── */
+.gate{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+.gate .box{background:var(--surface);border:1px solid var(--border);border-radius:16px;
+  padding:28px;max-width:360px;width:100%;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.gate .logo{width:48px;height:48px;border-radius:12px;background:var(--text);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-size:1.5rem;margin:0 auto 14px}
+.gate h1{font-size:1.15rem;margin-bottom:4px}
+.gate p{color:var(--muted);font-size:.85rem;margin-bottom:18px}
+.gate input{width:100%;padding:12px;font-size:1rem;border:1px solid var(--border2);
+  border-radius:10px;margin-bottom:12px;text-align:center}
+.gate input:focus{outline:none;border-color:var(--green);box-shadow:0 0 0 3px var(--ring)}
+.gate button{width:100%;padding:12px;font-weight:700;color:#fff;background:var(--text);
+  border:none;border-radius:10px;cursor:pointer;font-size:1rem}
+.gate .err{color:var(--red);font-size:.82rem;min-height:1.2em;margin-bottom:6px}
+.gate .back{display:inline-block;margin-top:14px;font-size:.8rem;color:var(--muted)}
+
+/* ── App ── */
+#app{display:none;max-width:1080px;margin:0 auto;padding:18px 16px 60px}
+header{display:flex;align-items:center;gap:12px;margin-bottom:18px;flex-wrap:wrap}
+.logo-sm{width:40px;height:40px;border-radius:11px;background:var(--text);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-size:1.3rem}
+header h1{font-size:1.1rem;font-weight:700}
+header .sub{font-size:.76rem;color:var(--muted)}
+header .right{margin-left:auto;display:flex;gap:8px;align-items:center}
+.btn-ghost{font-size:.78rem;padding:7px 12px;border:1px solid var(--border2);border-radius:8px;
+  background:var(--surface);cursor:pointer;color:var(--text);text-decoration:none}
+.btn-ghost:hover{border-color:var(--muted)}
+
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
+.stat{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 14px}
+.stat .n{font-size:1.5rem;font-weight:800;line-height:1}
+.stat .l{font-size:.72rem;color:var(--muted);margin-top:3px;text-transform:uppercase;letter-spacing:.04em}
+.stat.pending .n{color:var(--amber)} .stat.approved .n{color:var(--green-d)} .stat.rejected .n{color:var(--red)}
+
+.toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
+.filters{display:flex;gap:6px;flex-wrap:wrap}
+.chip{font-size:.8rem;padding:7px 13px;border:1px solid var(--border2);border-radius:20px;
+  background:var(--surface);cursor:pointer;font-weight:500}
+.chip.active{background:var(--text);color:#fff;border-color:var(--text)}
+.toolbar .spacer{flex:1}
+.sortsel{font-size:.8rem;padding:7px 10px;border:1px solid var(--border2);border-radius:8px;background:var(--surface)}
+
+.tablewrap{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden}
+table{width:100%;border-collapse:collapse;font-size:.88rem}
+th,td{text-align:left;padding:12px 14px;border-bottom:1px solid var(--border)}
+th{font-size:.7rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);background:#fafbfc;font-weight:600}
+tr:last-child td{border-bottom:none}
+td.name{font-weight:600}
+.phone a{color:var(--green-d);text-decoration:none}
+.status{display:inline-block;font-size:.72rem;font-weight:700;padding:4px 10px;border-radius:20px;text-transform:capitalize}
+.status.pending{background:var(--amber-bg);color:var(--amber)}
+.status.approved{background:var(--green-bg);color:var(--green-d)}
+.status.rejected{background:var(--red-bg);color:var(--red-d)}
+.actions{display:flex;gap:6px;flex-wrap:wrap}
+.act{font-size:.76rem;font-weight:600;padding:6px 11px;border-radius:8px;border:none;cursor:pointer}
+.act.approve{background:var(--green);color:#fff} .act.approve:hover{background:var(--green-d)}
+.act.reject{background:var(--surface);color:var(--red);border:1px solid #fca5a5} .act.reject:hover{background:var(--red-bg)}
+.act:disabled{opacity:.5;cursor:wait}
+.muted-dash{color:var(--border2)}
+.empty{text-align:center;padding:48px 20px;color:var(--muted)}
+.loading{text-align:center;padding:48px 20px;color:var(--muted)}
+.banner{display:none;background:var(--red-bg);color:var(--red-d);border:1px solid #fca5a5;
+  border-radius:10px;padding:11px 14px;font-size:.85rem;margin-bottom:14px}
+.banner.show{display:block}
+
+/* Mobile: cards instead of table */
+@media(max-width:720px){
+  .stats{grid-template-columns:repeat(2,1fr)}
+  table,thead,tbody,th,td,tr{display:block}
+  thead{display:none}
+  tr{border-bottom:8px solid var(--bg);padding:6px 0}
+  td{border:none;padding:5px 14px;display:flex;justify-content:space-between;gap:14px}
+  td::before{content:attr(data-label);color:var(--muted);font-size:.72rem;text-transform:uppercase;
+    letter-spacing:.04em;font-weight:600;align-self:center}
+  td.actions{justify-content:flex-end;padding-top:10px;padding-bottom:12px}
+  td.actions::before{content:""}
+}
+</style>
+</head>
+<body>
+
+<!-- Login gate -->
+<div id="gate" class="gate">
+  <div class="box">
+    <div class="logo">⚡</div>
+    <h1>Facilities Admin</h1>
+    <p>Enter the facilities passcode to manage charging bay bookings.</p>
+    <form id="gateForm">
+      <div id="gateErr" class="err"></div>
+      <input type="password" id="passcode" placeholder="Passcode" autocomplete="current-password" autofocus>
+      <button type="submit">Unlock</button>
+    </form>
+    <a class="back" href="index.html">← Back to booking form</a>
+  </div>
+</div>
+
+<!-- App -->
+<div id="app">
+  <header>
+    <div class="logo-sm">⚡</div>
+    <div>
+      <h1>EV Charging — Facilities</h1>
+      <div class="sub">Staines office · review &amp; approve bookings</div>
+    </div>
+    <div class="right">
+      <button class="btn-ghost" id="refreshBtn">↻ Refresh</button>
+      <a class="btn-ghost" href="index.html">Booking form</a>
+      <button class="btn-ghost" id="logoutBtn">Lock</button>
+    </div>
+  </header>
+
+  <div id="banner" class="banner"></div>
+
+  <div class="stats">
+    <div class="stat"><div class="n" id="statTotal">–</div><div class="l">Total</div></div>
+    <div class="stat pending"><div class="n" id="statPending">–</div><div class="l">Pending</div></div>
+    <div class="stat approved"><div class="n" id="statApproved">–</div><div class="l">Approved</div></div>
+    <div class="stat rejected"><div class="n" id="statRejected">–</div><div class="l">Rejected</div></div>
+  </div>
+
+  <div class="toolbar">
+    <div class="filters" id="filters">
+      <button class="chip active" data-status="all">All</button>
+      <button class="chip" data-status="pending">Pending</button>
+      <button class="chip" data-status="approved">Approved</button>
+      <button class="chip" data-status="rejected">Rejected</button>
+    </div>
+    <span class="spacer"></span>
+    <select class="sortsel" id="sortsel">
+      <option value="soonest">Date: soonest first</option>
+      <option value="latest">Date: latest first</option>
+      <option value="newest">Recently submitted</option>
+    </select>
+  </div>
+
+  <div class="tablewrap">
+    <table>
+      <thead>
+        <tr><th>Name</th><th>Phone</th><th>Bay</th><th>Date</th><th>Time slot</th><th>Status</th><th>Actions</th></tr>
+      </thead>
+      <tbody id="tbody">
+        <tr><td colspan="7" class="loading">Loading bookings…</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script>
+(function(){
+  const cfg = window.EV_CONFIG || {};
+  const configured = cfg.SUPABASE_URL && !cfg.SUPABASE_URL.includes("YOUR-PROJECT")
+                  && cfg.SUPABASE_ANON_KEY && !cfg.SUPABASE_ANON_KEY.includes("YOUR-ANON");
+  const $ = id => document.getElementById(id);
+  let sb = configured ? supabase.createClient(cfg.SUPABASE_URL, cfg.SUPABASE_ANON_KEY) : null;
+
+  let bookings = [];
+  let filter = "all";
+  let sort = "soonest";
+  let pollTimer = null;
+
+  // ── Auth gate (light-touch, client-side only) ──
+  const SESSION_KEY = "ev_admin_ok";
+  function unlocked(){ return sessionStorage.getItem(SESSION_KEY)==="1"; }
+  function showApp(){
+    $("gate").style.display="none"; $("app").style.display="block";
+    load();
+    pollTimer = setInterval(load, 30000); // auto-refresh every 30s
+  }
+  $("gateForm").addEventListener("submit",(e)=>{
+    e.preventDefault();
+    const v = $("passcode").value;
+    if (v === (cfg.ADMIN_PASSCODE||"")){
+      sessionStorage.setItem(SESSION_KEY,"1"); showApp();
+    } else {
+      $("gateErr").textContent = "Incorrect passcode.";
+      $("passcode").value="";
+    }
+  });
+  $("logoutBtn").addEventListener("click",()=>{
+    sessionStorage.removeItem(SESSION_KEY);
+    if (pollTimer) clearInterval(pollTimer);
+    location.reload();
+  });
+  if (unlocked()) showApp();
+
+  // ── Data ──
+  function banner(msg){ const b=$("banner"); if(!msg){b.classList.remove("show");return;} b.textContent=msg; b.classList.add("show"); }
+
+  async function load(){
+    if (!sb){ $("tbody").innerHTML='<tr><td colspan="7" class="empty">Not configured — add your Supabase keys in config.js (see SETUP.md).</td></tr>'; return; }
+    try{
+      const { data, error } = await sb.from("bookings").select("*");
+      if (error) throw error;
+      bookings = data || [];
+      banner("");
+      render();
+    }catch(e){
+      banner("Couldn't load bookings — check your connection / Supabase config.");
+      console.error(e);
+    }
+  }
+
+  async function setStatus(id, status, btn){
+    if (!sb) return;
+    if (btn){ btn.disabled=true; }
+    try{
+      const { error } = await sb.from("bookings").update({status}).eq("id", id);
+      if (error) throw error;
+      await load();
+    }catch(e){
+      // Most likely the unique-approved-slot guard fired (slot already approved)
+      const msg = (e && e.code === "23505")
+        ? "That slot already has an approved booking for this bay & date."
+        : "Update failed — please try again.";
+      banner(msg);
+      console.error(e);
+      if (btn) btn.disabled=false;
+    }
+  }
+
+  // ── Render ──
+  function fmtDate(d){
+    const dt=new Date(d+"T00:00:00");
+    return dt.toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short"});
+  }
+  function statusCounts(){
+    const c={total:bookings.length,pending:0,approved:0,rejected:0};
+    bookings.forEach(b=>{ if(c[b.status]!==undefined) c[b.status]++; });
+    return c;
+  }
+  function sortFn(a,b){
+    if (sort==="newest") return (b.created_at||"").localeCompare(a.created_at||"");
+    const byDate = (a.date||"").localeCompare(b.date||"") || (a.slot||"").localeCompare(b.slot||"");
+    return sort==="latest" ? -byDate : byDate;
+  }
+  function esc(s){ return String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+
+  function render(){
+    const c = statusCounts();
+    $("statTotal").textContent=c.total; $("statPending").textContent=c.pending;
+    $("statApproved").textContent=c.approved; $("statRejected").textContent=c.rejected;
+
+    let rows = bookings.filter(b=> filter==="all" || b.status===filter).slice().sort(sortFn);
+    const tb = $("tbody");
+
+    if (!rows.length){
+      tb.innerHTML = '<tr><td colspan="7" class="empty">No '+(filter==="all"?"":filter+" ")+'bookings yet.</td></tr>';
+      return;
+    }
+
+    tb.innerHTML = rows.map(b=>{
+      const phone = esc(b.phone);
+      let actions;
+      if (b.status==="pending"){
+        actions = '<div class="actions">'+
+          '<button class="act approve" data-id="'+b.id+'" data-action="approved">Approve</button>'+
+          '<button class="act reject" data-id="'+b.id+'" data-action="rejected">Reject</button></div>';
+      } else if (b.status==="rejected"){
+        actions = '<div class="actions"><button class="act approve" data-id="'+b.id+'" data-action="approved">Approve</button></div>';
+      } else { // approved
+        actions = '<span class="muted-dash">Locked</span>';
+      }
+      return '<tr>'+
+        '<td class="name" data-label="Name">'+esc(b.name)+'</td>'+
+        '<td class="phone" data-label="Phone"><a href="tel:'+phone+'">'+phone+'</a></td>'+
+        '<td data-label="Bay">Bay '+esc(b.bay)+'</td>'+
+        '<td data-label="Date">'+fmtDate(b.date)+'</td>'+
+        '<td data-label="Slot">'+esc(b.slot)+'</td>'+
+        '<td data-label="Status"><span class="status '+esc(b.status)+'">'+esc(b.status)+'</span></td>'+
+        '<td class="actions" data-label="">'+actions+'</td>'+
+      '</tr>';
+    }).join("");
+
+    tb.querySelectorAll(".act").forEach(btn=>{
+      btn.addEventListener("click",()=> setStatus(btn.dataset.id, btn.dataset.action, btn));
+    });
+  }
+
+  $("filters").addEventListener("click",(e)=>{
+    const chip=e.target.closest(".chip"); if(!chip) return;
+    filter = chip.dataset.status;
+    $("filters").querySelectorAll(".chip").forEach(c=>c.classList.toggle("active", c===chip));
+    render();
+  });
+  $("sortsel").addEventListener("change",(e)=>{ sort=e.target.value; render(); });
+  $("refreshBtn").addEventListener("click", load);
+})();
+</script>
+</body>
+</html>
