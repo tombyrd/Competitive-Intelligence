@@ -1,0 +1,1905 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LinkedIn Ad Intelligence — NxB</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+
+<style>
+:root{
+  --black:#000000; --bg:#050505; --surface:#0a0a0a; --surface2:#111111;
+  --border:#1a1a1a; --border2:#222222; --white:#ffffff; --grey:#777777;
+  --light:#bbbbbb; --green:#00C67A; --amber:#F59E0B; --red:#EF4444;
+  --blue:#60A5FA; --purple:#A78BFA; --teal:#2DD4BF;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  background:var(--bg); color:var(--light);
+  font-family:'Inter',system-ui,sans-serif; font-size:0.85rem; font-weight:400;
+  -webkit-font-smoothing:antialiased; line-height:1.5;
+}
+a{color:var(--blue);text-decoration:none}
+a:hover{text-decoration:underline}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:6px}
+::-webkit-scrollbar-thumb:hover{background:#333}
+
+.mono{font-family:'JetBrains Mono',monospace}
+.label{font-family:'JetBrains Mono',monospace;font-size:0.55rem;text-transform:uppercase;letter-spacing:0.15em;color:var(--grey)}
+
+/* ---------- Header ---------- */
+header{
+  position:fixed;top:0;left:0;right:0;height:58px;z-index:100;
+  display:flex;align-items:center;gap:18px;padding:0 18px;
+  background:var(--black);border-bottom:1px solid var(--border2);
+}
+.brand{display:flex;align-items:center;gap:10px;white-space:nowrap}
+.brand .nxb{font-family:'JetBrains Mono',monospace;font-weight:500;color:var(--purple);font-size:1.05rem;letter-spacing:-0.02em}
+.brand .ttl{color:var(--white);font-weight:600;font-size:0.95rem;letter-spacing:-0.02em}
+.demo-badge{
+  display:none;font-family:'JetBrains Mono',monospace;font-size:0.55rem;letter-spacing:0.15em;
+  text-transform:uppercase;color:var(--amber);border:1px solid var(--amber);
+  padding:3px 7px;border-radius:5px;
+}
+.demo-badge.on{display:inline-block}
+.dataset-info{color:var(--grey);font-size:0.72rem;font-family:'JetBrains Mono',monospace;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hdr-actions{display:flex;align-items:center;gap:8px}
+.btn{
+  font-family:'Inter',sans-serif;font-size:0.75rem;font-weight:500;cursor:pointer;
+  background:var(--surface2);color:var(--light);border:1px solid var(--border2);
+  border-radius:6px;padding:7px 12px;transition:all .15s;white-space:nowrap;
+}
+.btn:hover{border-color:#333;color:var(--white)}
+.btn.primary{background:var(--purple);color:var(--black);border-color:var(--purple);font-weight:600}
+.btn.primary:hover{background:#b9a4fb}
+.btn.ghost{background:transparent}
+.btn.danger:hover{border-color:var(--red);color:var(--red)}
+.btn.sm{padding:5px 9px;font-size:0.7rem}
+.icon-btn{
+  width:32px;height:32px;display:flex;align-items:center;justify-content:center;
+  border-radius:6px;background:var(--surface2);border:1px solid var(--border2);
+  color:var(--light);cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:0.85rem;
+}
+.icon-btn:hover{color:var(--white);border-color:#333}
+.hamburger{display:none}
+
+/* ---------- Layout ---------- */
+.shell{display:flex;padding-top:58px;min-height:100vh}
+nav.sidebar{
+  position:fixed;top:58px;left:0;bottom:0;width:220px;z-index:90;
+  background:var(--surface);border-right:1px solid var(--border2);
+  padding:14px 0;overflow-y:auto;transition:transform .2s;
+}
+nav.sidebar .navgroup-label{padding:8px 18px 6px}
+.navlink{
+  display:flex;align-items:center;gap:10px;padding:10px 18px;cursor:pointer;
+  color:var(--grey);font-size:0.82rem;font-weight:500;border-left:3px solid transparent;transition:all .12s;
+}
+.navlink:hover{color:var(--light);background:var(--surface2)}
+.navlink.active{color:var(--white);border-left-color:var(--purple);background:var(--surface2)}
+.navlink .num{font-family:'JetBrains Mono',monospace;font-size:0.6rem;color:var(--grey);width:14px}
+.navlink.active .num{color:var(--purple)}
+main{margin-left:220px;flex:1;padding:26px 30px 60px;max-width:100%;overflow-x:hidden}
+
+/* ---------- Section header ---------- */
+.section-head{margin-bottom:22px}
+.section-head h1{font-size:1.5rem;font-weight:700;letter-spacing:-0.03em;color:var(--white)}
+.section-head h1 em{color:var(--purple);font-style:normal}
+.section-head .sub{color:var(--grey);font-size:0.8rem;margin-top:4px}
+
+/* ---------- Cards / panels ---------- */
+.card{background:var(--surface);border:1px solid var(--border2);border-radius:8px}
+.panel{background:var(--surface);border:1px solid var(--border2);border-radius:8px;padding:18px}
+.panel h3{font-size:0.95rem;font-weight:600;color:var(--white);margin-bottom:2px}
+.panel .phint{color:var(--grey);font-size:0.72rem;margin-bottom:14px}
+
+/* ---------- Stat bar ---------- */
+.statbar{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:24px}
+.stat{background:var(--surface);border:1px solid var(--border2);border-radius:8px;padding:16px}
+.stat .label{margin-bottom:8px}
+.stat .val{font-size:1.6rem;font-weight:700;color:var(--white);line-height:1.1;letter-spacing:-0.02em}
+.stat .meta{color:var(--grey);font-size:0.72rem;margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* ---------- Charts ---------- */
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px}
+.grid2{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+.chart{width:100%;height:300px}
+.chart.tall{height:420px}
+
+/* ---------- Insight callouts ---------- */
+.insights{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+.insight{display:flex;gap:12px;padding:15px;border-radius:8px;background:var(--surface);border:1px solid var(--border2);border-left-width:3px}
+.insight.red{border-left-color:var(--red)}
+.insight.amber{border-left-color:var(--amber)}
+.insight.info{border-left-color:var(--blue)}
+.insight.green{border-left-color:var(--green)}
+.insight .ico{font-family:'JetBrains Mono',monospace;font-weight:500;font-size:0.7rem;flex-shrink:0;margin-top:2px}
+.insight.red .ico{color:var(--red)} .insight.amber .ico{color:var(--amber)}
+.insight.info .ico{color:var(--blue)} .insight.green .ico{color:var(--green)}
+.insight .txt{font-size:0.8rem;color:var(--light)}
+.insight .txt b{color:var(--white);font-weight:600}
+
+/* ---------- Filters ---------- */
+.explorer-layout{display:grid;grid-template-columns:260px 1fr;gap:20px;align-items:start}
+.filter-panel{position:sticky;top:74px;background:var(--surface);border:1px solid var(--border2);border-radius:8px;padding:14px;max-height:calc(100vh - 96px);overflow-y:auto}
+.filter-panel h4{font-size:0.8rem;color:var(--white);margin-bottom:12px;display:flex;justify-content:space-between;align-items:center}
+.fgroup{margin-bottom:16px;border-bottom:1px solid var(--border);padding-bottom:14px}
+.fgroup:last-child{border-bottom:none}
+.fgroup>.label{display:block;margin-bottom:8px}
+.checklist{max-height:160px;overflow-y:auto;display:flex;flex-direction:column;gap:4px}
+.checkrow{display:flex;align-items:center;gap:7px;font-size:0.76rem;color:var(--light);cursor:pointer;padding:2px 0}
+.checkrow input{accent-color:var(--purple);cursor:pointer}
+.checkrow .cnt{margin-left:auto;color:var(--grey);font-family:'JetBrains Mono',monospace;font-size:0.62rem}
+input[type=text],input[type=search],input[type=date],select{
+  width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:6px;
+  color:var(--white);font-family:'Inter',sans-serif;font-size:0.78rem;padding:8px 10px;
+}
+input:focus,select:focus{outline:none;border-color:var(--purple)}
+select{cursor:pointer}
+.toggle-row{display:flex;gap:6px}
+.toggle-row button{flex:1;font-size:0.68rem;padding:5px;background:var(--surface2);border:1px solid var(--border2);border-radius:5px;color:var(--grey);cursor:pointer}
+.toggle-row button.on{background:var(--purple);color:var(--black);border-color:var(--purple);font-weight:600}
+.daterow{display:flex;gap:6px}
+.daterow input{font-size:0.7rem;padding:6px}
+
+.explorer-toolbar{display:flex;align-items:center;gap:14px;margin-bottom:14px;flex-wrap:wrap}
+.result-count{font-family:'JetBrains Mono',monospace;font-size:0.72rem;color:var(--light)}
+.result-count b{color:var(--purple)}
+.toolbar-spacer{flex:1}
+
+/* ---------- Ad grid ---------- */
+.ad-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.ad-card{background:var(--surface);border:1px solid var(--border2);border-radius:8px;overflow:hidden;display:flex;flex-direction:column}
+.ad-card-head{display:flex;align-items:center;gap:9px;padding:12px 12px 8px}
+.logo{width:32px;height:32px;border-radius:50%;object-fit:cover;flex-shrink:0;background:var(--surface2);border:1px solid var(--border2)}
+.logo-fallback{width:32px;height:32px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;color:var(--black);font-weight:700;font-size:0.85rem}
+.ad-card-head .adv{min-width:0;flex:1}
+.ad-card-head .adv .name{font-size:0.8rem;font-weight:600;color:var(--white);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ad-card-head .adv .paid{font-size:0.62rem;color:var(--grey);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:'JetBrains Mono',monospace}
+.pill{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:0.55rem;text-transform:uppercase;letter-spacing:0.08em;padding:3px 7px;border-radius:4px;border:1px solid;white-space:nowrap}
+.badge-row{display:flex;gap:6px;flex-wrap:wrap;padding:0 12px 10px}
+.ad-creative{position:relative;height:180px;background:var(--surface2);overflow:hidden;border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+.ad-creative img{width:100%;height:100%;object-fit:cover;display:block;cursor:pointer}
+.creative-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;color:var(--grey);background:var(--surface2)}
+.play-ico{width:46px;height:46px;border-radius:50%;border:2px solid var(--white);display:flex;align-items:center;justify-content:center;color:var(--white)}
+.filmstrip{display:flex;height:100%;gap:2px}
+.filmstrip img{flex:1;height:100%;object-fit:cover;min-width:0}
+.ad-body{padding:11px 12px;font-size:0.76rem;color:var(--light);flex:1}
+.ad-body .hl{color:var(--white);font-weight:600;margin-bottom:5px;font-size:0.8rem}
+.ad-body .bodytext{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;transition:all .2s}
+.ad-card:hover .ad-body .bodytext{-webkit-line-clamp:unset;overflow:visible}
+.ad-card-foot{display:flex;align-items:center;gap:8px;padding:10px 12px;border-top:1px solid var(--border);flex-wrap:wrap}
+.cta-tag{font-family:'JetBrains Mono',monospace;font-size:0.58rem;color:var(--light);background:var(--surface2);border:1px solid var(--border2);padding:3px 6px;border-radius:4px}
+.daterange{font-size:0.6rem;color:var(--grey);font-family:'JetBrains Mono',monospace}
+.ad-card-foot .btn{margin-left:auto}
+
+/* pagination */
+.pager{display:flex;align-items:center;justify-content:center;gap:10px;margin-top:22px}
+.pager span{font-family:'JetBrains Mono',monospace;font-size:0.72rem;color:var(--grey)}
+
+/* ---------- Tables ---------- */
+.tbl-wrap{overflow-x:auto;border:1px solid var(--border2);border-radius:8px}
+table{width:100%;border-collapse:collapse;font-size:0.76rem}
+th{
+  text-align:left;padding:10px 12px;background:var(--surface2);color:var(--grey);
+  font-family:'JetBrains Mono',monospace;font-size:0.6rem;text-transform:uppercase;letter-spacing:0.1em;
+  white-space:nowrap;cursor:pointer;user-select:none;border-bottom:1px solid var(--border2);position:sticky;top:0;
+}
+th:hover{color:var(--light)}
+th .caret{color:var(--purple);margin-left:4px}
+td{padding:9px 12px;border-bottom:1px solid var(--border);color:var(--light);vertical-align:middle}
+tr:hover td{background:var(--surface2)}
+table.clickable tr{cursor:pointer}
+td .tbl-logo{width:22px;height:22px;border-radius:50%;object-fit:cover;background:var(--surface2)}
+.trunc{max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:inline-block}
+
+/* ---------- Heatmap container ---------- */
+.heatmap{width:100%;height:440px}
+
+/* ---------- CTA strategy grid ---------- */
+.cta-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}
+.cta-card{background:var(--surface2);border:1px solid var(--border2);border-radius:7px;padding:12px}
+.cta-card .ch{font-size:0.78rem;font-weight:600;color:var(--white);margin-bottom:8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cta-card .crow{display:flex;justify-content:space-between;font-size:0.7rem;padding:2px 0;color:var(--light)}
+.cta-card .crow .n{color:var(--grey);font-family:'JetBrains Mono',monospace}
+
+/* ---------- Gallery ---------- */
+.gallery{column-count:4;column-gap:12px}
+.gtile{break-inside:avoid;margin-bottom:12px;position:relative;border-radius:7px;overflow:hidden;border:1px solid var(--border2);cursor:pointer;background:var(--surface2)}
+.gtile img{width:100%;display:block}
+.gtile .g-logo{position:absolute;bottom:6px;left:6px;width:24px;height:24px;border-radius:50%;border:1px solid rgba(255,255,255,.3);object-fit:cover}
+.gtile .g-fmt{position:absolute;top:6px;right:6px}
+.gtile .g-imp{position:absolute;top:6px;left:6px}
+.gtile .g-ph{height:160px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:6px;color:var(--grey);text-align:center;padding:10px}
+
+/* ---------- Themes ---------- */
+.theme-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.theme-card{background:var(--surface2);border:1px solid var(--border2);border-radius:7px;padding:14px}
+.theme-card .th{font-size:0.85rem;font-weight:600;color:var(--white);margin-bottom:3px}
+.theme-card .tc{font-size:1.4rem;font-weight:700;color:var(--purple)}
+.theme-card .ts{font-size:0.66rem;color:var(--grey);margin-top:8px;line-height:1.5}
+.theme-card .ts span{color:var(--light)}
+
+/* ---------- Thought leaders ---------- */
+.tl-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.tl-card{background:var(--surface);border:1px solid var(--border2);border-radius:8px;padding:16px}
+.tl-card .tl-head{display:flex;gap:12px;align-items:center;margin-bottom:10px}
+.tl-card .tl-avatar{width:48px;height:48px;border-radius:50%;object-fit:cover;background:var(--surface2);border:1px solid var(--border2);flex-shrink:0}
+.tl-card .tl-name{font-size:0.85rem;font-weight:600;color:var(--white)}
+.tl-card .tl-title{font-size:0.66rem;color:var(--grey);line-height:1.4;margin-top:2px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.tl-card .tl-meta{display:flex;gap:14px;font-size:0.66rem;color:var(--grey);font-family:'JetBrains Mono',monospace;margin:8px 0}
+.tl-card .tl-meta b{color:var(--purple)}
+.tl-card .tl-preview{font-size:0.72rem;color:var(--light);border-top:1px solid var(--border);padding-top:10px}
+
+/* ---------- Tabs ---------- */
+.tabs{display:flex;gap:4px;margin-bottom:14px;border-bottom:1px solid var(--border2)}
+.tab{padding:8px 14px;font-size:0.76rem;color:var(--grey);cursor:pointer;border-bottom:2px solid transparent;font-weight:500}
+.tab.active{color:var(--white);border-bottom-color:var(--purple)}
+
+/* ---------- Modal ---------- */
+.modal-overlay{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.82);display:none;align-items:flex-start;justify-content:center;overflow-y:auto;padding:30px 16px}
+.modal-overlay.open{display:flex}
+.modal{background:var(--surface);border:1px solid var(--border2);border-radius:10px;width:100%;max-width:860px;position:relative}
+.modal-head{display:flex;align-items:center;gap:12px;padding:18px 20px;border-bottom:1px solid var(--border2)}
+.modal-head .adv .name{font-size:1rem;font-weight:700;color:var(--white)}
+.modal-head .adv .paid{font-size:0.66rem;color:var(--grey);font-family:'JetBrains Mono',monospace}
+.modal-close{position:absolute;top:14px;right:14px}
+.modal-nav{display:flex;gap:8px;margin-left:auto;margin-right:42px}
+.modal-body{padding:20px;display:grid;grid-template-columns:1fr 1fr;gap:22px}
+.modal-body .mfull{grid-column:1/-1}
+.m-field{margin-bottom:14px}
+.m-field .label{display:block;margin-bottom:5px}
+.m-field .v{font-size:0.82rem;color:var(--light)}
+.m-creative img{max-width:100%;border-radius:7px;border:1px solid var(--border2);display:block}
+.m-creative video{max-width:100%;border-radius:7px;background:#000}
+.carousel-strip{display:flex;gap:10px;overflow-x:auto;padding-bottom:8px}
+.carousel-strip .cslide{flex:0 0 220px}
+.carousel-strip .cslide img{width:220px;height:220px;object-fit:cover;border-radius:6px;border:1px solid var(--border2)}
+.carousel-strip .cslide .ch{font-size:0.7rem;color:var(--light);margin-top:6px}
+.copyrow{display:flex;gap:8px;align-items:center}
+.copyrow .url{font-family:'JetBrains Mono',monospace;font-size:0.66rem;color:var(--blue);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;background:var(--surface2);padding:7px 9px;border-radius:5px;flex:1;border:1px solid var(--border2)}
+.country-tbl{width:100%;font-size:0.72rem}
+.country-tbl td{padding:5px 8px}
+
+/* ---------- Empty state ---------- */
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:70px 20px;color:var(--grey)}
+.empty-state .ttl{font-size:1rem;color:var(--light);font-weight:600;margin-bottom:8px}
+.empty-state .ds{font-size:0.82rem;max-width:440px;line-height:1.6}
+.empty-state .icon-big{font-family:'JetBrains Mono',monospace;font-size:2rem;color:var(--border2);margin-bottom:14px}
+
+/* ---------- Toast ---------- */
+.toast-container{position:fixed;bottom:20px;right:20px;z-index:300;display:flex;flex-direction:column;gap:10px}
+.toast{background:var(--surface2);border:1px solid var(--border2);border-left:3px solid var(--purple);border-radius:7px;padding:12px 16px;min-width:240px;max-width:340px;font-size:0.78rem;color:var(--light);box-shadow:0 8px 24px rgba(0,0,0,.5);animation:slideIn .25s ease}
+.toast.green{border-left-color:var(--green)} .toast.amber{border-left-color:var(--amber)}
+.toast.red{border-left-color:var(--red)} .toast.info{border-left-color:var(--blue)}
+@keyframes slideIn{from{transform:translateX(40px);opacity:0}to{transform:translateX(0);opacity:1}}
+
+/* ---------- Spinner ---------- */
+.spinner-overlay{position:fixed;inset:0;z-index:400;background:rgba(0,0,0,.7);display:none;align-items:center;justify-content:center;flex-direction:column;gap:16px}
+.spinner-overlay.on{display:flex}
+.spinner{width:38px;height:38px;border:3px solid var(--border2);border-top-color:var(--purple);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.spinner-overlay .stxt{color:var(--light);font-family:'JetBrains Mono',monospace;font-size:0.75rem}
+
+/* shortcuts modal */
+.sc-list{display:grid;grid-template-columns:auto 1fr;gap:10px 18px;align-items:center}
+.sc-list kbd{font-family:'JetBrains Mono',monospace;background:var(--surface2);border:1px solid var(--border2);border-radius:5px;padding:3px 8px;font-size:0.7rem;color:var(--white);justify-self:start}
+
+/* ---------- Responsive ---------- */
+@media(max-width:1100px){
+  .statbar{grid-template-columns:repeat(3,1fr)}
+  .grid3{grid-template-columns:1fr}
+  .gallery{column-count:3}
+  .cta-grid{grid-template-columns:repeat(3,1fr)}
+}
+@media(max-width:768px){
+  .hamburger{display:flex}
+  nav.sidebar{transform:translateX(-100%)}
+  nav.sidebar.open{transform:translateX(0)}
+  main{margin-left:0;padding:18px 14px 50px}
+  .statbar{grid-template-columns:repeat(2,1fr)}
+  .explorer-layout{grid-template-columns:1fr}
+  .filter-panel{position:static;max-height:none}
+  .ad-grid{grid-template-columns:1fr}
+  .grid2{grid-template-columns:1fr}
+  .insights{grid-template-columns:1fr}
+  .gallery{column-count:2}
+  .cta-grid{grid-template-columns:repeat(2,1fr)}
+  .theme-grid{grid-template-columns:1fr}
+  .tl-grid{grid-template-columns:1fr}
+  .modal-body{grid-template-columns:1fr}
+  .dataset-info{display:none}
+}
+@media(max-width:480px){
+  .gallery{column-count:1}
+  .cta-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <button class="icon-btn hamburger" id="hamburgerBtn" title="Menu">≡</button>
+  <div class="brand">
+    <span class="nxb">NxB</span>
+    <span class="ttl">LinkedIn Ad Intelligence</span>
+    <span class="demo-badge" id="demoBadge">Demo Data</span>
+  </div>
+  <div class="dataset-info" id="datasetInfo">No data loaded</div>
+  <div class="hdr-actions">
+    <button class="btn ghost sm" id="sampleBtn">Load Sample Data</button>
+    <button class="btn primary sm" id="loadBtn">Load Data</button>
+    <button class="btn ghost sm danger" id="clearBtn">Clear</button>
+    <button class="icon-btn" id="helpBtn" title="Keyboard shortcuts">?</button>
+    <input type="file" id="fileInput" accept=".json,application/json" multiple style="display:none">
+  </div>
+</header>
+
+<div class="shell">
+  <nav class="sidebar" id="sidebar">
+    <div class="navgroup-label label">Sections</div>
+    <div class="navlink active" data-section="overview"><span class="num">1</span>Overview</div>
+    <div class="navlink" data-section="explorer"><span class="num">2</span>Ad Explorer</div>
+    <div class="navlink" data-section="competitive"><span class="num">3</span>Competitive Analysis</div>
+    <div class="navlink" data-section="creative"><span class="num">4</span>Creative Intelligence</div>
+    <div class="navlink" data-section="geographic"><span class="num">5</span>Geographic Intelligence</div>
+    <div class="navlink" data-section="thought"><span class="num">6</span>Thought Leadership</div>
+    <div class="navlink" data-section="raw"><span class="num">7</span>Raw Data</div>
+  </nav>
+
+  <main id="main"></main>
+</div>
+
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal" id="modal"></div>
+</div>
+
+<div class="modal-overlay" id="scOverlay">
+  <div class="modal" style="max-width:460px">
+    <div class="modal-head"><div class="adv"><div class="name">Keyboard Shortcuts</div></div><button class="icon-btn modal-close" id="scClose">✕</button></div>
+    <div style="padding:22px">
+      <div class="sc-list">
+        <kbd>/</kbd><span>Focus keyword search (Ad Explorer)</span>
+        <kbd>Esc</kbd><span>Close open modal</span>
+        <kbd>←  →</kbd><span>Previous / next ad in detail modal</span>
+        <kbd>1 – 7</kbd><span>Jump to section by number</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<div class="spinner-overlay" id="spinnerOverlay">
+  <div class="spinner"></div>
+  <div class="stxt" id="spinnerText">Parsing…</div>
+</div>
+
+<script>
+"use strict";
+
+/* ============================================================
+   1. CONSTANTS & DESIGN TOKENS
+   ============================================================ */
+const C = {
+  black:'#000000', bg:'#050505', surface:'#0a0a0a', surface2:'#111111',
+  border:'#1a1a1a', border2:'#222222', white:'#ffffff', grey:'#777777',
+  light:'#bbbbbb', green:'#00C67A', amber:'#F59E0B', red:'#EF4444',
+  blue:'#60A5FA', purple:'#A78BFA', teal:'#2DD4BF'
+};
+
+const FORMAT_COLORS = {
+  SINGLE_IMAGE:C.blue, CAROUSEL:C.purple, VIDEO:C.amber, DOCUMENT:C.teal,
+  MESSAGE:C.grey, TEXT:C.grey, LINKEDIN_ARTICLE:C.purple, JOB:C.grey
+};
+const fmtColor = f => FORMAT_COLORS[f] || C.grey;
+const fmtLabel = f => (f||'UNKNOWN').replace(/_/g,' ');
+
+// Impression band → numeric midpoint. Order matters for sorting / donut.
+const BAND_ORDER = ['< 1k','1k-5k','5k-10k','10k-20k','20k-30k','30k-50k','100k-150k'];
+const BAND_MID = {'< 1k':500,'1k-5k':3000,'5k-10k':7500,'10k-20k':15000,'20k-30k':25000,'30k-50k':40000,'100k-150k':125000};
+
+function normBand(raw){
+  if(!raw) return '';
+  const s = String(raw).trim();
+  if(!s) return '';
+  // normalise spacing/casing to known band keys
+  const cleaned = s.replace(/\s+/g,'').toLowerCase(); // e.g. "<1k", "1k-5k"
+  for(const b of BAND_ORDER){
+    if(b.replace(/\s+/g,'').toLowerCase() === cleaned) return b;
+  }
+  return s; // unknown band — keep raw
+}
+function bandMid(raw){ const b=normBand(raw); return BAND_MID[b] ?? null; }
+function bandTier(raw){
+  const m = bandMid(raw);
+  if(m===null) return 'none';
+  if(m>=10000) return 'high';
+  if(m>=1000) return 'mid';
+  return 'low';
+}
+function bandColor(raw){
+  const t = bandTier(raw);
+  return t==='high'?C.green : t==='mid'?C.amber : C.grey;
+}
+
+const IFS_MARKETS = ['United Kingdom','United States','Germany','France','Netherlands'];
+
+const STOPWORDS = new Set(("a an the and or but if then else for to of in on at by with from into over under again further is are was were be been being have has had do does did will would shall should can could may might must this that these those it its as your you we our us they them their he she his her i me my mine not no nustom so than too very just about up down out off all any both each few more most other some such only own same s t don now d ll m re ve y get new use using make made how what when where which who whom why").split(/\s+/));
+
+const THEME_CLUSTERS = [
+  {name:'AI / Intelligence', color:C.purple, terms:['ai','artificial intelligence','machine learning','intelligent','agentic','genai','generative']},
+  {name:'Cloud / Digital',  color:C.blue,   terms:['cloud','digital','transformation','platform','saas','migration']},
+  {name:'ROI / Business',   color:C.green,  terms:['efficiency','productivity','cost','roi','savings','growth','revenue']}
+];
+
+const ACQ_CTAS = new Set(['download','register','apply','sign up','request demo','attend','join','baixar']);
+const AWARE_CTAS = new Set(['learn more','see more','see more jobs','mehr erfahren','en savoir plus','saiba mais','scopri di più']);
+function ctaClass(c){
+  const k = (c||'').trim().toLowerCase();
+  if(ACQ_CTAS.has(k)) return {type:'acquisition',color:C.green};
+  if(AWARE_CTAS.has(k)) return {type:'awareness',color:C.blue};
+  return {type:'other',color:C.grey};
+}
+
+const SECTIONS = ['overview','explorer','competitive','creative','geographic','thought','raw'];
+
+/* ============================================================
+   2. APP STATE
+   ============================================================ */
+const AppState = {
+  rawData: [],
+  filteredData: [],
+  selectedAd: null,
+  filters: {
+    advertiser:[], format:[], impressionBand:[], cta:[], language:[],
+    dateRange:{start:null,end:null}, keyword:'',
+    hasImage:null, hasVideo:null, activeOnly:false
+  },
+  sortBy: 'impressions_desc',
+  activeSection: 'overview',
+  charts: [],            // live ECharts instances
+  files: [],             // loaded file names
+  isDemo: false,
+  page: 0,               // ad explorer page
+  rawPage: 0,            // raw data page
+  rawSearch: '',
+  rawSort: {col:null, dir:1},
+  compSort: {col:'totalAds', dir:-1},
+  wordSort: {col:'freq', dir:-1}
+};
+
+/* ============================================================
+   3. UTIL
+   ============================================================ */
+const $ = (s,r=document)=>r.querySelector(s);
+const $$ = (s,r=document)=>Array.from(r.querySelectorAll(s));
+function esc(s){
+  if(s===null||s===undefined) return '';
+  return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function attr(s){ return esc(s).replace(/`/g,'&#96;'); }
+function debounce(fn,ms){ let t; return (...a)=>{clearTimeout(t);t=setTimeout(()=>fn(...a),ms);}; }
+function uniq(arr){ return Array.from(new Set(arr)); }
+function colorFor(str){
+  const palette=[C.purple,C.blue,C.green,C.amber,C.teal,C.red];
+  let h=0; for(let i=0;i<(str||'').length;i++) h=(h*31+str.charCodeAt(i))>>>0;
+  return palette[h%palette.length];
+}
+function phUri(label,sub){
+  const t = esc(label||'').slice(0,18);
+  const s = esc(sub||'');
+  const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='400' height='280'><rect width='100%' height='100%' fill='#111111'/><rect x='0.5' y='0.5' width='399' height='279' fill='none' stroke='#222222'/><text x='50%' y='46%' fill='#777777' font-family='monospace' font-size='18' text-anchor='middle'>${t}</text><text x='50%' y='58%' fill='#444' font-family='monospace' font-size='12' text-anchor='middle'>${s}</text></svg>`;
+  return 'data:image/svg+xml,'+encodeURIComponent(svg);
+}
+// global broken-image handler
+window.imgErr = function(img){
+  if(img.dataset.fb) return;
+  img.dataset.fb='1';
+  img.src = phUri(img.dataset.adv||'Image unavailable', img.dataset.fmt||'');
+  img.style.objectFit='contain';
+};
+// broken-logo handler -> swap to coloured initial circle
+window.logoErr = function(img){
+  const sz=img.dataset.sz||32;
+  const adv=img.dataset.adv||'?';
+  const d=document.createElement('div');
+  d.className='logo-fallback';
+  d.style.width=sz+'px'; d.style.height=sz+'px';
+  d.style.background=colorFor(adv);
+  d.textContent=(adv[0]||'?').toUpperCase();
+  img.replaceWith(d);
+};
+function fmtDate(d){
+  if(!d) return '';
+  try{ const dt=new Date(d); if(isNaN(dt)) return d;
+    return dt.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
+  }catch(e){ return d; }
+}
+function todayISO(){ return new Date().toISOString().slice(0,10); }
+
+/* impressionsPerCountry percent parser: "12%"->12, "<1%"->0.5 */
+function parsePct(p){
+  if(p===null||p===undefined) return 0;
+  const s=String(p).trim();
+  if(s.startsWith('<')) return 0.5;
+  const n=parseFloat(s.replace('%',''));
+  return isNaN(n)?0:n;
+}
+
+/* ---- per-record accessors (defensive) ---- */
+function adImages(ad){
+  const out=[];
+  if(ad.imageUrl) out.push(ad.imageUrl);
+  if(Array.isArray(ad.imageUrls)) ad.imageUrls.forEach(u=>u&&out.push(u));
+  if(Array.isArray(ad.slides)) ad.slides.forEach(s=>s&&s.imageUrl&&out.push(s.imageUrl));
+  return uniq(out);
+}
+function primaryImage(ad){
+  if(ad.imageUrl) return ad.imageUrl;
+  if(Array.isArray(ad.imageUrls)&&ad.imageUrls[0]) return ad.imageUrls[0];
+  if(Array.isArray(ad.slides)&&ad.slides[0]&&ad.slides[0].imageUrl) return ad.slides[0].imageUrl;
+  return null;
+}
+function hasImage(ad){ return !!(ad.imageUrl || (ad.imageUrls&&ad.imageUrls.length) || (ad.slides&&ad.slides.some(s=>s&&s.imageUrl))); }
+function hasVideo(ad){ return !!ad.videoUrl; }
+function adCtas(ad){ return Array.isArray(ad.ctas)?ad.ctas.filter(Boolean):[]; }
+
+/* ============================================================
+   4. TOAST / SPINNER
+   ============================================================ */
+function toast(msg,type='info'){
+  const c=$('#toastContainer');
+  const el=document.createElement('div');
+  el.className='toast '+type;
+  el.textContent=msg;
+  c.appendChild(el);
+  setTimeout(()=>{ el.style.transition='opacity .3s'; el.style.opacity='0'; setTimeout(()=>el.remove(),300); },3000);
+}
+function showSpinner(txt){ $('#spinnerText').textContent=txt||'Parsing…'; $('#spinnerOverlay').classList.add('on'); }
+function hideSpinner(){ $('#spinnerOverlay').classList.remove('on'); }
+
+/* ============================================================
+   5. DATA LOADING & MERGE
+   ============================================================ */
+function mergeRecords(records, sourceName){
+  if(!Array.isArray(records)) throw new Error('JSON root is not an array');
+  const existing = new Set(AppState.rawData.map(r=>r.adId).filter(Boolean));
+  let added=0, dupes=0;
+  records.forEach(r=>{
+    if(!r || typeof r!=='object') return;
+    const id = r.adId;
+    if(id && existing.has(id)){ dupes++; return; }
+    if(id) existing.add(id);
+    AppState.rawData.push(r);
+    added++;
+  });
+  if(sourceName && !AppState.files.includes(sourceName)) AppState.files.push(sourceName);
+  return {added, dupes};
+}
+
+function handleFiles(fileList){
+  const files = Array.from(fileList);
+  if(!files.length) return;
+  const big = files.some(f=>f.size>10*1024*1024);
+  if(big) showSpinner('Parsing large file…');
+  let pending = files.length;
+  let totalAdded=0, totalDupes=0, lastName='';
+
+  files.forEach(file=>{
+    const reader = new FileReader();
+    reader.onload = e=>{
+      try{
+        const data = JSON.parse(e.target.result);
+        const arr = Array.isArray(data)?data:(Array.isArray(data.items)?data.items:[data]);
+        const {added,dupes} = mergeRecords(arr, file.name);
+        totalAdded+=added; totalDupes+=dupes; lastName=file.name;
+        AppState.isDemo=false;
+      }catch(err){
+        toast('Failed to parse '+file.name+': '+err.message,'red');
+      }
+      if(--pending===0) finishLoad(totalAdded,totalDupes,lastName);
+    };
+    reader.onerror = ()=>{ toast('Could not read '+file.name,'red'); if(--pending===0) finishLoad(totalAdded,totalDupes,lastName); };
+    reader.readAsText(file);
+  });
+}
+
+function finishLoad(added,dupes,name){
+  hideSpinner();
+  if(added>0) toast(`Loaded ${added} ads from ${name||'file'}`,'green');
+  if(dupes>0) toast(`${dupes} duplicate ad IDs skipped`,'amber');
+  if(added===0 && dupes===0) toast('No new ads found in file(s)','amber');
+  updateHeader();
+  applyFilters();
+  renderActiveSection();
+}
+
+function loadSampleData(){
+  AppState.rawData = SAMPLE_DATA.slice();
+  AppState.files = ['sample-demo.json'];
+  AppState.isDemo = true;
+  updateHeader();
+  toast('Loaded 3 demo records','green');
+  applyFilters();
+  renderActiveSection();
+}
+
+function clearAllData(){
+  AppState.rawData=[]; AppState.filteredData=[]; AppState.files=[]; AppState.isDemo=false;
+  AppState.selectedAd=null; AppState.page=0; AppState.rawPage=0; AppState.rawSearch='';
+  resetFilters();
+  updateHeader();
+  applyFilters();
+  renderActiveSection();
+  toast('All data cleared','info');
+}
+
+function resetFilters(){
+  AppState.filters = {
+    advertiser:[], format:[], impressionBand:[], cta:[], language:[],
+    dateRange:{start:null,end:null}, keyword:'',
+    hasImage:null, hasVideo:null, activeOnly:false
+  };
+}
+
+function updateHeader(){
+  const n = AppState.rawData.length;
+  const f = AppState.files.length;
+  const info = n
+    ? `${n.toLocaleString()} ads · ${f} file${f===1?'':'s'} loaded · Last loaded: ${fmtDate(todayISO())}`
+    : 'No data loaded';
+  $('#datasetInfo').textContent = info;
+  $('#demoBadge').classList.toggle('on', AppState.isDemo);
+}
+
+/* ============================================================
+   6. FILTERS
+   ============================================================ */
+function recordMatchesKeyword(ad,kw){
+  if(!kw) return true;
+  const hay = [
+    ad.body, ad.headline, ad.advertiserName, ad.paidBy,
+    ...(Array.isArray(ad.slides)?ad.slides.map(s=>s&&s.headline):[])
+  ].filter(Boolean).join(' ').toLowerCase();
+  return hay.includes(kw);
+}
+
+function applyFilters(){
+  const f = AppState.filters;
+  const kw = (f.keyword||'').trim().toLowerCase();
+  const today = todayISO();
+  let data = AppState.rawData.filter(ad=>{
+    if(f.advertiser.length && !f.advertiser.includes(ad.advertiserName)) return false;
+    if(f.format.length && !f.format.includes(ad.format)) return false;
+    if(f.impressionBand.length && !f.impressionBand.includes(normBand(ad.impressions))) return false;
+    if(f.cta.length && !adCtas(ad).some(c=>f.cta.includes(c))) return false;
+    if(f.language.length && !f.language.includes(ad.targeting&&ad.targeting.language)) return false;
+    if(f.hasImage===true && !hasImage(ad)) return false;
+    if(f.hasImage===false && hasImage(ad)) return false;
+    if(f.hasVideo===true && !hasVideo(ad)) return false;
+    if(f.hasVideo===false && hasVideo(ad)) return false;
+    if(f.dateRange.start && ad.availability && ad.availability.start && ad.availability.start < f.dateRange.start) return false;
+    if(f.dateRange.end && ad.availability && ad.availability.end && ad.availability.end > f.dateRange.end) return false;
+    if(f.activeOnly){
+      if(!(ad.availability && ad.availability.end && ad.availability.end >= today)) return false;
+    }
+    if(!recordMatchesKeyword(ad,kw)) return false;
+    return true;
+  });
+  data = sortData(data, AppState.sortBy);
+  AppState.filteredData = data;
+}
+
+function sortData(data, sortBy){
+  const d = data.slice();
+  switch(sortBy){
+    case 'impressions_desc': d.sort((a,b)=>(bandMid(b.impressions)??-1)-(bandMid(a.impressions)??-1)); break;
+    case 'impressions_asc':  d.sort((a,b)=>(bandMid(a.impressions)??Infinity)-(bandMid(b.impressions)??Infinity)); break;
+    case 'advertiser_az':    d.sort((a,b)=>(a.advertiserName||'').localeCompare(b.advertiserName||'')); break;
+    case 'format':           d.sort((a,b)=>(a.format||'').localeCompare(b.format||'')); break;
+    case 'recent':           d.sort((a,b)=>((b.availability&&b.availability.start)||'').localeCompare((a.availability&&a.availability.start)||'')); break;
+    case 'oldest':           d.sort((a,b)=>((a.availability&&a.availability.start)||'').localeCompare((b.availability&&b.availability.start)||'')); break;
+  }
+  return d;
+}
+
+/* derive option lists from rawData */
+function optionCounts(keyFn){
+  const m=new Map();
+  AppState.rawData.forEach(ad=>{
+    const vals=keyFn(ad);
+    (Array.isArray(vals)?vals:[vals]).forEach(v=>{
+      if(v===undefined||v===null||v==='') return;
+      m.set(v,(m.get(v)||0)+1);
+    });
+  });
+  return m;
+}
+
+/* ============================================================
+   7. CHART LIFECYCLE
+   ============================================================ */
+function disposeCharts(){
+  AppState.charts.forEach(c=>{ try{ c.dispose(); }catch(e){} });
+  AppState.charts=[];
+}
+function makeChart(el){
+  if(!el) return null;
+  const c = echarts.init(el, null, {renderer:'canvas'});
+  AppState.charts.push(c);
+  return c;
+}
+const baseTooltip = {
+  backgroundColor:C.surface2, borderColor:C.border2,
+  textStyle:{color:C.light,fontSize:12,fontFamily:'Inter'},
+  extraCssText:'border-radius:6px;'
+};
+const axisStyle = {
+  axisLine:{lineStyle:{color:C.border2}},
+  axisLabel:{color:C.grey,fontSize:11,fontFamily:'Inter'},
+  splitLine:{lineStyle:{color:C.border}}
+};
+
+/* resize all charts */
+window.addEventListener('resize', debounce(()=>{ AppState.charts.forEach(c=>{try{c.resize();}catch(e){}}); },150));
+
+/* ============================================================
+   8. SECTION ROUTING
+   ============================================================ */
+function setSection(sec){
+  if(!SECTIONS.includes(sec)) return;
+  AppState.activeSection=sec;
+  $$('.navlink').forEach(n=>n.classList.toggle('active', n.dataset.section===sec));
+  $('#sidebar').classList.remove('open');
+  renderActiveSection();
+  $('#main').scrollTop=0; window.scrollTo(0,0);
+}
+
+function renderActiveSection(){
+  disposeCharts();
+  const main=$('#main');
+  const sec=AppState.activeSection;
+  if(!AppState.rawData.length && sec!=='overview'){
+    main.innerHTML = sectionHeadHTML(sec) + emptyStateHTML();
+    return;
+  }
+  switch(sec){
+    case 'overview':    renderOverview(); break;
+    case 'explorer':    renderExplorer(); break;
+    case 'competitive': renderCompetitive(); break;
+    case 'creative':    renderCreative(); break;
+    case 'geographic':  renderGeographic(); break;
+    case 'thought':     renderThought(); break;
+    case 'raw':         renderRaw(); break;
+  }
+}
+
+function emptyStateHTML(msg){
+  return `<div class="empty-state">
+    <div class="icon-big mono">[ ]</div>
+    <div class="ttl">No data loaded</div>
+    <div class="ds">${msg||'Use the <b>Load Data</b> button to import your Apify LinkedIn Ad Library JSON export, or click <b>Load Sample Data</b> to preview the dashboard.'}</div>
+  </div>`;
+}
+function emptyFilterHTML(){
+  return `<div class="empty-state"><div class="icon-big mono">∅</div><div class="ttl">No ads match current filters</div><div class="ds">Try clearing or adjusting your filters.</div></div>`;
+}
+const SECTION_TITLES = {
+  overview:['Executive','Overview','Summary of the loaded competitive dataset'],
+  explorer:['Ad','Explorer','Browse, filter and inspect every ad'],
+  competitive:['Competitive','Analysis','Compare advertisers side by side'],
+  creative:['Creative','Intelligence','Visual gallery and messaging analysis'],
+  geographic:['Geographic','Intelligence','Where competitors are targeting'],
+  thought:['Thought','Leadership','Executives amplified via paid LinkedIn'],
+  raw:['Raw','Data','Full tabular view with export']
+};
+function sectionHeadHTML(sec){
+  const [pre,em,sub]=SECTION_TITLES[sec];
+  return `<div class="section-head"><div class="label">${esc(sec==='competitive'||sec==='creative'||sec==='geographic'?'Competitive Intelligence':'NxB Intelligence')}</div>
+    <h1>${esc(pre)} <em>${esc(em)}</em></h1><div class="sub">${esc(sub)}</div></div>`;
+}
+
+/* ============================================================
+   9. OVERVIEW SECTION (6.1)
+   ============================================================ */
+function renderOverview(){
+  const main=$('#main');
+  if(!AppState.rawData.length){
+    main.innerHTML = sectionHeadHTML('overview') + emptyStateHTML();
+    return;
+  }
+  const data = AppState.rawData;
+  const advCounts = optionCounts(a=>a.advertiserName);
+  const fmtCounts = optionCounts(a=>a.format);
+  const topFmt = [...fmtCounts.entries()].sort((a,b)=>b[1]-a[1])[0];
+  // highest impression ad
+  let topAd=null,topMid=-1;
+  data.forEach(a=>{ const m=bandMid(a.impressions); if(m!==null&&m>topMid){topMid=m;topAd=a;} });
+  // date range span
+  let minStart=null,maxEnd=null;
+  data.forEach(a=>{ if(a.availability){ if(a.availability.start&&(!minStart||a.availability.start<minStart))minStart=a.availability.start; if(a.availability.end&&(!maxEnd||a.availability.end>maxEnd))maxEnd=a.availability.end; }});
+
+  main.innerHTML = sectionHeadHTML('overview') + `
+    <div class="statbar">
+      <div class="stat"><div class="label">Total Ads Loaded</div><div class="val">${data.length.toLocaleString()}</div><div class="meta">${AppState.files.length} file${AppState.files.length===1?'':'s'}</div></div>
+      <div class="stat"><div class="label">Unique Advertisers</div><div class="val">${advCounts.size}</div><div class="meta">in dataset</div></div>
+      <div class="stat"><div class="label">Most Active Format</div><div class="val">${topFmt?esc(fmtLabel(topFmt[0])):'—'}</div><div class="meta">${topFmt?topFmt[1]+' ads':''}</div></div>
+      <div class="stat"><div class="label">Highest Impression Ad</div><div class="val" style="font-size:1.05rem">${topAd?esc(topAd.advertiserName):'—'}</div><div class="meta">${topAd?esc(normBand(topAd.impressions)):'no impression data'}</div></div>
+      <div class="stat"><div class="label">Date Range Span</div><div class="val" style="font-size:0.95rem">${minStart?esc(fmtDate(minStart)):'—'}</div><div class="meta">→ ${maxEnd?esc(fmtDate(maxEnd)):'—'}</div></div>
+    </div>
+    <div class="grid3">
+      <div class="panel"><h3>Ad Format Distribution</h3><div class="phint">Count and share by format</div><div class="chart" id="chFormat"></div></div>
+      <div class="panel"><h3>Top Advertisers</h3><div class="phint">By ad count — click a bar to filter</div><div class="chart" id="chAdv"></div></div>
+      <div class="panel"><h3>Impression Band Distribution</h3><div class="phint">${data.filter(a=>bandMid(a.impressions)!==null).length} ads with data</div><div class="chart" id="chImp"></div></div>
+    </div>
+    <div class="section-head" style="margin:6px 0 14px"><div class="label">Automatic Insights</div></div>
+    <div class="insights" id="insights"></div>
+  `;
+  renderFormatChart(fmtCounts, data.length);
+  renderAdvChart(advCounts);
+  renderImpChart(data);
+  renderInsights(data, advCounts, fmtCounts, topFmt);
+}
+
+function renderFormatChart(fmtCounts,total){
+  const c=makeChart($('#chFormat')); if(!c) return;
+  const entries=[...fmtCounts.entries()].sort((a,b)=>a[1]-b[1]);
+  c.setOption({
+    backgroundColor:'transparent',
+    grid:{left:4,right:54,top:8,bottom:8,containLabel:true},
+    tooltip:{...baseTooltip,trigger:'item',formatter:p=>`${fmtLabel(p.name)}<br/><b>${p.value}</b> ads (${(p.value/total*100).toFixed(1)}%)`},
+    xAxis:{type:'value',...axisStyle,splitLine:{lineStyle:{color:C.border}}},
+    yAxis:{type:'category',data:entries.map(e=>fmtLabel(e[0])),...axisStyle,splitLine:{show:false}},
+    series:[{
+      type:'bar',data:entries.map(e=>({value:e[1],itemStyle:{color:fmtColor(e[0])}})),
+      barWidth:'62%',
+      label:{show:true,position:'right',color:C.light,fontSize:11,formatter:p=>`${p.value} (${(p.value/total*100).toFixed(0)}%)`}
+    }]
+  });
+}
+function renderAdvChart(advCounts){
+  const c=makeChart($('#chAdv')); if(!c) return;
+  const entries=[...advCounts.entries()].sort((a,b)=>b[1]-a[1]).slice(0,10).reverse();
+  c.setOption({
+    backgroundColor:'transparent',
+    grid:{left:4,right:40,top:8,bottom:8,containLabel:true},
+    tooltip:{...baseTooltip,trigger:'item',formatter:p=>`${esc(p.name)}<br/><b>${p.value}</b> ads`},
+    xAxis:{type:'value',...axisStyle},
+    yAxis:{type:'category',data:entries.map(e=>e[0]),...axisStyle,axisLabel:{color:C.grey,fontSize:10,width:120,overflow:'truncate',formatter:v=>v}},
+    series:[{type:'bar',data:entries.map(e=>e[1]),barWidth:'62%',itemStyle:{color:C.purple},label:{show:true,position:'right',color:C.light,fontSize:11}}]
+  });
+  c.on('click',p=>{
+    AppState.filters.advertiser=[p.name];
+    setSection('explorer');
+    toast('Filtered to '+p.name,'info');
+  });
+}
+function renderImpChart(data){
+  const c=makeChart($('#chImp')); if(!c) return;
+  const m=new Map();
+  data.forEach(a=>{ const b=normBand(a.impressions); if(b){ m.set(b,(m.get(b)||0)+1); }});
+  const ordered = BAND_ORDER.filter(b=>m.has(b)).map(b=>({name:b,value:m.get(b),itemStyle:{color:bandColor(b)}}));
+  // include unknown bands
+  [...m.keys()].filter(b=>!BAND_ORDER.includes(b)).forEach(b=>ordered.push({name:b,value:m.get(b),itemStyle:{color:C.grey}}));
+  if(!ordered.length){
+    c.setOption({backgroundColor:'transparent',title:{text:'No impression data',left:'center',top:'center',textStyle:{color:C.grey,fontSize:13,fontWeight:400}}});
+    return;
+  }
+  c.setOption({
+    backgroundColor:'transparent',
+    tooltip:{...baseTooltip,trigger:'item',formatter:p=>`${p.name}<br/><b>${p.value}</b> ads (${p.percent}%)`},
+    legend:{bottom:0,textStyle:{color:C.grey,fontSize:10},itemWidth:9,itemHeight:9},
+    series:[{
+      type:'pie',radius:['45%','70%'],center:['50%','44%'],
+      data:ordered,
+      label:{color:C.light,fontSize:11,formatter:'{b}: {c}'},
+      labelLine:{lineStyle:{color:C.border2}},
+      itemStyle:{borderColor:C.surface,borderWidth:2}
+    }]
+  });
+}
+
+function renderInsights(data, advCounts, fmtCounts, topFmt){
+  const el=$('#insights'); const out=[]; const total=data.length;
+  // 1. dominance
+  const topAdv=[...advCounts.entries()].sort((a,b)=>b[1]-a[1])[0];
+  if(topAdv){
+    const share=topAdv[1]/total*100;
+    if(share>40) out.push({c:'red',i:'THREAT',t:`<b>${esc(topAdv[0])}</b> dominates this dataset with <b>${share.toFixed(0)}%</b> share of all ads (${topAdv[1]} of ${total}).`});
+  }
+  // 2. video adoption
+  const vid=fmtCounts.get('VIDEO')||0; const vidShare=vid/total*100;
+  if(vidShare<5) out.push({c:'amber',i:'GAP',t:`Video adoption is low across this competitor set — only <b>${vidShare.toFixed(1)}%</b> of ads use the VIDEO format.`});
+  else out.push({c:'green',i:'SIGNAL',t:`Video is in active use — <b>${vid}</b> ads (${vidShare.toFixed(1)}%) run the VIDEO format.`});
+  // 3. sparse impressions
+  const noImp=data.filter(a=>bandMid(a.impressions)===null).length;
+  const noPct=noImp/total*100;
+  if(noPct>15) out.push({c:'info',i:'DATA',t:`<b>${noPct.toFixed(0)}%</b> of ads have no impression data — LinkedIn may throttle this for newer ads.`});
+  // 4. top CTA
+  const ctaCounts=optionCounts(a=>adCtas(a));
+  const topCta=[...ctaCounts.entries()].sort((a,b)=>b[1]-a[1])[0];
+  if(topCta){
+    const adsWith=data.filter(a=>adCtas(a).includes(topCta[0])).length;
+    out.push({c:'info',i:'CTA',t:`Most common CTA is <b>"${esc(topCta[0])}"</b> — appearing in <b>${(adsWith/total*100).toFixed(0)}%</b> of ads.`});
+  }
+  // 5. most active format fallback
+  if(topFmt) out.push({c:'green',i:'FORMAT',t:`<b>${esc(fmtLabel(topFmt[0]))}</b> is the most-used format at <b>${(topFmt[1]/total*100).toFixed(0)}%</b> of the dataset.`});
+
+  el.innerHTML = out.slice(0,4).map(o=>`<div class="insight ${o.c}"><div class="ico">${o.i}</div><div class="txt">${o.t}</div></div>`).join('');
+}
+
+/* ============================================================
+   10. AD EXPLORER (6.2)
+   ============================================================ */
+function renderExplorer(){
+  const main=$('#main');
+  main.innerHTML = sectionHeadHTML('explorer') + `
+    <div class="explorer-layout">
+      <aside class="filter-panel" id="filterPanel"></aside>
+      <div>
+        <div class="explorer-toolbar">
+          <div class="result-count" id="resultCount"></div>
+          <div class="toolbar-spacer"></div>
+          <label class="label" style="margin-right:6px">Sort</label>
+          <select id="sortSelect" style="width:auto">
+            <option value="impressions_desc">Impressions (High → Low)</option>
+            <option value="impressions_asc">Impressions (Low → High)</option>
+            <option value="advertiser_az">Advertiser (A–Z)</option>
+            <option value="format">Format</option>
+            <option value="recent">Most Recent</option>
+            <option value="oldest">Oldest First</option>
+          </select>
+        </div>
+        <div id="adGrid"></div>
+        <div id="pager"></div>
+      </div>
+    </div>`;
+  buildFilterPanel();
+  $('#sortSelect').value=AppState.sortBy;
+  $('#sortSelect').addEventListener('change',e=>{ AppState.sortBy=e.target.value; applyFilters(); AppState.page=0; renderAdGrid(); });
+  renderAdGrid();
+}
+
+function buildFilterPanel(){
+  const p=$('#filterPanel');
+  const f=AppState.filters;
+  const advs=[...optionCounts(a=>a.advertiserName).entries()].sort((a,b)=>a[0].localeCompare(b[0]));
+  const fmts=[...optionCounts(a=>a.format).entries()].sort((a,b)=>b[1]-a[1]);
+  const bands=[...optionCounts(a=>normBand(a.impressions)).entries()].sort((a,b)=>(BAND_ORDER.indexOf(a[0])-BAND_ORDER.indexOf(b[0])));
+  const ctas=[...optionCounts(a=>adCtas(a)).entries()].sort((a,b)=>b[1]-a[1]);
+  const langs=[...optionCounts(a=>a.targeting&&a.targeting.language).entries()].sort((a,b)=>b[1]-a[1]);
+
+  const checkGroup=(title,key,entries)=>`
+    <div class="fgroup"><span class="label">${title}</span>
+      <div class="checklist">
+        ${entries.map(([v,c])=>`<label class="checkrow"><input type="checkbox" data-fkey="${key}" value="${attr(v)}" ${f[key].includes(v)?'checked':''}><span>${esc(v||'—')}</span><span class="cnt">${c}</span></label>`).join('')}
+      </div></div>`;
+  const tri=(title,key)=>`
+    <div class="fgroup"><span class="label">${title}</span>
+      <div class="toggle-row" data-tri="${key}">
+        <button data-val="any" class="${f[key]===null?'on':''}">Any</button>
+        <button data-val="yes" class="${f[key]===true?'on':''}">Yes</button>
+        <button data-val="no" class="${f[key]===false?'on':''}">No</button>
+      </div></div>`;
+
+  p.innerHTML = `
+    <h4>Filters <button class="btn ghost sm" id="clearFilters">Clear All</button></h4>
+    <div class="fgroup"><span class="label">Keyword Search</span><input type="search" id="kwInput" placeholder="Search body, headline, slides…" value="${attr(f.keyword)}"></div>
+    ${checkGroup('Advertiser',  'advertiser', advs)}
+    ${checkGroup('Format',      'format',     fmts)}
+    ${checkGroup('Impression Band','impressionBand', bands)}
+    ${checkGroup('CTA',         'cta',        ctas)}
+    ${checkGroup('Language',    'language',   langs)}
+    ${tri('Has Image','hasImage')}
+    ${tri('Has Video','hasVideo')}
+    <div class="fgroup"><span class="label">Date Range</span>
+      <div class="daterow"><input type="date" id="dStart" value="${attr(f.dateRange.start||'')}"><input type="date" id="dEnd" value="${attr(f.dateRange.end||'')}"></div></div>
+    <div class="fgroup"><label class="checkrow"><input type="checkbox" id="activeOnly" ${f.activeOnly?'checked':''}><span>Active only (ending today or later)</span></label></div>
+  `;
+
+  // wire checkboxes
+  $$('input[type=checkbox][data-fkey]',p).forEach(cb=>cb.addEventListener('change',()=>{
+    const key=cb.dataset.fkey, val=cb.value;
+    const arr=AppState.filters[key];
+    if(cb.checked){ if(!arr.includes(val))arr.push(val); } else { AppState.filters[key]=arr.filter(x=>x!==val); }
+    applyFilters(); AppState.page=0; renderAdGrid();
+  }));
+  // keyword
+  const kw=$('#kwInput',p);
+  kw.addEventListener('input',debounce(e=>{ AppState.filters.keyword=e.target.value; applyFilters(); AppState.page=0; renderAdGrid(); },200));
+  // tri toggles
+  $$('.toggle-row[data-tri]',p).forEach(row=>{
+    row.addEventListener('click',e=>{
+      const btn=e.target.closest('button'); if(!btn)return;
+      const key=row.dataset.tri, val=btn.dataset.val;
+      AppState.filters[key]= val==='any'?null: val==='yes';
+      $$('button',row).forEach(b=>b.classList.toggle('on',b===btn));
+      applyFilters(); AppState.page=0; renderAdGrid();
+    });
+  });
+  // dates
+  $('#dStart',p).addEventListener('change',e=>{ AppState.filters.dateRange.start=e.target.value||null; applyFilters(); AppState.page=0; renderAdGrid(); });
+  $('#dEnd',p).addEventListener('change',e=>{ AppState.filters.dateRange.end=e.target.value||null; applyFilters(); AppState.page=0; renderAdGrid(); });
+  $('#activeOnly',p).addEventListener('change',e=>{ AppState.filters.activeOnly=e.target.checked; applyFilters(); AppState.page=0; renderAdGrid(); });
+  // clear
+  $('#clearFilters',p).addEventListener('click',()=>{ resetFilters(); applyFilters(); AppState.page=0; renderExplorer(); });
+}
+
+const PAGE_SIZE=100;
+function paginationActive(){ return AppState.rawData.length>5000; }
+
+function renderAdGrid(){
+  const grid=$('#adGrid'); const data=AppState.filteredData;
+  $('#resultCount').innerHTML=`Showing <b>${data.length.toLocaleString()}</b> of ${AppState.rawData.length.toLocaleString()} ads`;
+  if(!data.length){
+    grid.innerHTML=emptyFilterHTML(); $('#pager').innerHTML='';
+    if(AppState.rawData.length) toast('No ads match current filters','amber');
+    return;
+  }
+  let slice=data, pageInfo=null;
+  if(paginationActive()){
+    const pages=Math.ceil(data.length/PAGE_SIZE);
+    AppState.page=Math.min(AppState.page,pages-1);
+    const start=AppState.page*PAGE_SIZE;
+    slice=data.slice(start,start+PAGE_SIZE);
+    pageInfo={pages,start};
+  }
+  grid.className='ad-grid';
+  grid.innerHTML=slice.map(ad=>adCardHTML(ad)).join('');
+  // wire card actions
+  $$('.ad-card',grid).forEach(card=>{
+    const idx=parseInt(card.dataset.idx,10);
+    const ad=AppState.filteredData[idx];
+    $$('.view-btn',card).forEach(b=>b.addEventListener('click',()=>openModal(idx)));
+    $$('.ad-creative img',card).forEach(img=>img.addEventListener('click',()=>openModal(idx)));
+  });
+  // pager
+  if(pageInfo){
+    $('#pager').innerHTML=`<div class="pager">
+      <button class="btn sm" id="prevPage" ${AppState.page===0?'disabled':''}>‹ Prev</button>
+      <span>Page ${AppState.page+1} / ${pageInfo.pages}</span>
+      <button class="btn sm" id="nextPage" ${AppState.page>=pageInfo.pages-1?'disabled':''}>Next ›</button></div>`;
+    $('#prevPage').addEventListener('click',()=>{ AppState.page--; renderAdGrid(); window.scrollTo(0,0); });
+    $('#nextPage').addEventListener('click',()=>{ AppState.page++; renderAdGrid(); window.scrollTo(0,0); });
+  } else $('#pager').innerHTML='';
+}
+
+function logoHTML(ad,size){
+  const sz=size||32;
+  if(ad.advertiserLogo) return `<img class="logo" style="width:${sz}px;height:${sz}px" src="${attr(ad.advertiserLogo)}" loading="lazy" data-sz="${sz}" data-adv="${attr(ad.advertiserName||'?')}" onerror="logoErr(this)" alt="">`;
+  const ch=esc((ad.advertiserName||'?')[0].toUpperCase());
+  return `<div class="logo-fallback" style="width:${sz}px;height:${sz}px;background:${colorFor(ad.advertiserName)}">${ch}</div>`;
+}
+
+function creativePreviewHTML(ad){
+  const advAttr=`data-adv="${attr(ad.advertiserName)}" data-fmt="${attr(fmtLabel(ad.format))}"`;
+  if(ad.format==='CAROUSEL' && Array.isArray(ad.slides) && ad.slides.length){
+    const imgs=ad.slides.filter(s=>s&&s.imageUrl).slice(0,4);
+    if(imgs.length) return `<div class="ad-creative"><div class="filmstrip">${imgs.map(s=>`<img loading="lazy" src="${attr(s.imageUrl)}" ${advAttr} onerror="imgErr(this)" alt="">`).join('')}</div></div>`;
+  }
+  if(ad.format==='VIDEO'){
+    const poster=ad.imageUrl||primaryImage(ad);
+    return `<div class="ad-creative">${poster?`<img loading="lazy" src="${attr(poster)}" ${advAttr} onerror="imgErr(this)" alt="">`:''}
+      <div class="creative-overlay" style="${poster?'background:rgba(0,0,0,.4)':''}"><div class="play-ico">▶</div><span class="label">Video</span></div></div>`;
+  }
+  if(ad.format==='DOCUMENT'){
+    return `<div class="ad-creative"><div class="creative-overlay"><div class="play-ico" style="border-radius:6px">DOC</div><span class="label">Document</span></div></div>`;
+  }
+  if(ad.format==='MESSAGE'){
+    return `<div class="ad-creative"><div class="creative-overlay"><div class="play-ico" style="border-radius:6px;font-family:'JetBrains Mono',monospace;font-size:0.6rem">MSG</div><span class="label">Message Ad</span></div></div>`;
+  }
+  const img=primaryImage(ad);
+  if(img) return `<div class="ad-creative"><img loading="lazy" src="${attr(img)}" ${advAttr} onerror="imgErr(this)" alt=""></div>`;
+  return `<div class="ad-creative"><div class="creative-overlay"><span class="label">${esc(fmtLabel(ad.format))}</span><span style="font-size:0.7rem">No creative</span></div></div>`;
+}
+
+function adCardHTML(ad){
+  const idx=AppState.filteredData.indexOf(ad);
+  const band=normBand(ad.impressions);
+  const ctas=adCtas(ad).slice(0,3);
+  const av=ad.availability;
+  return `<div class="ad-card" data-idx="${idx}">
+    <div class="ad-card-head">
+      ${logoHTML(ad)}
+      <div class="adv">
+        <div class="name">${ad.advertiserUrl?`<a href="${attr(ad.advertiserUrl)}" target="_blank" rel="noopener">${esc(ad.advertiserName)}</a>`:esc(ad.advertiserName)}</div>
+        ${ad.paidBy?`<div class="paid">Paid by ${esc(ad.paidBy)}</div>`:''}
+      </div>
+    </div>
+    <div class="badge-row">
+      <span class="pill" style="color:${fmtColor(ad.format)};border-color:${fmtColor(ad.format)}">${esc(fmtLabel(ad.format))}</span>
+      ${band?`<span class="pill" style="color:${bandColor(band)};border-color:${bandColor(band)}">${esc(band)}</span>`:''}
+    </div>
+    ${creativePreviewHTML(ad)}
+    <div class="ad-body">
+      ${ad.headline?`<div class="hl">${esc(ad.headline)}</div>`:''}
+      ${ad.body?`<div class="bodytext">${esc(ad.body)}</div>`:'<div class="bodytext" style="color:var(--grey)">No body text</div>'}
+    </div>
+    <div class="ad-card-foot">
+      ${ctas.map(c=>`<span class="cta-tag">${esc(c)}</span>`).join('')}
+      ${av&&(av.start||av.end)?`<span class="daterange">${esc(fmtDate(av.start))}${av.end?' – '+esc(fmtDate(av.end)):''}</span>`:''}
+      <button class="btn sm view-btn">View Full Ad</button>
+    </div>
+  </div>`;
+}
+
+/* ============================================================
+   11. AD DETAIL MODAL (6.2.3)
+   ============================================================ */
+function openModal(idx){
+  const ad=AppState.filteredData[idx];
+  if(!ad) return;
+  AppState.selectedAd=idx;
+  $('#modal').innerHTML=modalHTML(ad,idx);
+  $('#modalOverlay').classList.add('open');
+  // wire nav + close + copy
+  $('#mClose').addEventListener('click',closeModal);
+  const prev=$('#mPrev'), next=$('#mNext');
+  if(prev) prev.addEventListener('click',()=>modalNav(-1));
+  if(next) next.addEventListener('click',()=>modalNav(1));
+  const copyBtn=$('#mCopyUrl');
+  if(copyBtn) copyBtn.addEventListener('click',()=>{
+    navigator.clipboard.writeText(copyBtn.dataset.url||'').then(()=>toast('Destination URL copied','green')).catch(()=>toast('Copy failed','red'));
+  });
+}
+function closeModal(){ $('#modalOverlay').classList.remove('open'); AppState.selectedAd=null; }
+function modalNav(dir){
+  if(AppState.selectedAd===null) return;
+  let i=AppState.selectedAd+dir;
+  if(i<0||i>=AppState.filteredData.length) return;
+  openModal(i);
+}
+
+function modalHTML(ad,idx){
+  const band=normBand(ad.impressions);
+  const ctas=adCtas(ad);
+  const av=ad.availability;
+  const tgt=ad.targeting||{};
+  const ipc=Array.isArray(ad.impressionsPerCountry)?ad.impressionsPerCountry:[];
+
+  let creative='';
+  if(ad.format==='SINGLE_IMAGE' || (ad.imageUrl && ad.format!=='CAROUSEL' && ad.format!=='VIDEO')){
+    const img=primaryImage(ad);
+    if(img) creative=`<a href="${attr(img)}" target="_blank" rel="noopener"><img src="${attr(img)}" data-adv="${attr(ad.advertiserName)}" data-fmt="${attr(fmtLabel(ad.format))}" onerror="imgErr(this)" alt=""></a>`;
+  }
+  if(ad.format==='CAROUSEL' && Array.isArray(ad.slides)){
+    creative=`<div class="carousel-strip">${ad.slides.filter(s=>s).map(s=>`<div class="cslide">${s.imageUrl?`<img src="${attr(s.imageUrl)}" data-adv="${attr(ad.advertiserName)}" data-fmt="CAROUSEL" onerror="imgErr(this)" alt="">`:''}${s.headline?`<div class="ch">${esc(s.headline)}</div>`:''}</div>`).join('')}</div>`;
+  }
+  if(ad.format==='VIDEO'){
+    if(ad.videoUrl && /\.(mp4|webm|m4v)|progressive-servable-video|playlist\/vid/i.test(ad.videoUrl)){
+      creative=`<video controls preload="none" ${primaryImage(ad)?`poster="${attr(primaryImage(ad))}"`:''} src="${attr(ad.videoUrl)}"></video>`;
+    } else if(ad.videoUrl){
+      creative=`<a class="btn primary" href="${attr(ad.videoUrl)}" target="_blank" rel="noopener">Open Video</a>`;
+    }
+  }
+  if(ad.format==='DOCUMENT' && ad.documentUrl){
+    creative=`<a class="btn primary" href="${attr(ad.documentUrl)}" target="_blank" rel="noopener">Open Document</a>`;
+  }
+  if(ad.format==='MESSAGE'){
+    creative=`<div style="display:flex;gap:12px;align-items:flex-start">${ad.senderImageUrl?`<img class="logo" style="width:48px;height:48px" src="${attr(ad.senderImageUrl)}" onerror="imgErr(this)" alt="">`:''}<div class="v">${esc(ad.body||'')}</div></div>`;
+  }
+  if(!creative && primaryImage(ad)){
+    creative=`<a href="${attr(primaryImage(ad))}" target="_blank" rel="noopener"><img src="${attr(primaryImage(ad))}" data-adv="${attr(ad.advertiserName)}" onerror="imgErr(this)" alt=""></a>`;
+  }
+
+  const tl = ad.thoughtLeaderMemberName ? `<div class="m-field"><span class="label">Thought Leader</span>
+     <div class="copyrow"><div style="display:flex;gap:10px;align-items:center">${ad.thoughtLeaderMemberImageUrl?`<img class="logo" style="width:40px;height:40px" src="${attr(ad.thoughtLeaderMemberImageUrl)}" onerror="imgErr(this)" alt="">`:''}<div><div class="v">${ad.thoughtLeaderMemberUrl?`<a href="${attr(ad.thoughtLeaderMemberUrl)}" target="_blank" rel="noopener">${esc(ad.thoughtLeaderMemberName)}</a>`:esc(ad.thoughtLeaderMemberName)}</div><div style="font-size:0.66rem;color:var(--grey)">${esc(ad.thoughtLeaderJobTitle||'')}</div></div></div></div></div>` : '';
+
+  return `
+    <div class="modal-head">
+      ${logoHTML(ad,40)}
+      <div class="adv">
+        <div class="name">${ad.advertiserUrl?`<a href="${attr(ad.advertiserUrl)}" target="_blank" rel="noopener">${esc(ad.advertiserName)}</a>`:esc(ad.advertiserName)}</div>
+        ${ad.paidBy?`<div class="paid">Paid by ${esc(ad.paidBy)}</div>`:''}
+      </div>
+      <div class="modal-nav">
+        <button class="btn sm" id="mPrev" ${idx<=0?'disabled':''}>‹ Prev</button>
+        <button class="btn sm" id="mNext" ${idx>=AppState.filteredData.length-1?'disabled':''}>Next ›</button>
+      </div>
+      <button class="icon-btn modal-close" id="mClose">✕</button>
+    </div>
+    <div class="modal-body">
+      <div>
+        <div class="m-field"><span class="label">Format</span><div><span class="pill" style="color:${fmtColor(ad.format)};border-color:${fmtColor(ad.format)}">${esc(fmtLabel(ad.format))}</span> ${band?`<span class="pill" style="color:${bandColor(band)};border-color:${bandColor(band)}">${esc(band)}</span>`:''}</div></div>
+        ${ad.headline?`<div class="m-field"><span class="label">Headline</span><div class="v" style="color:var(--white);font-weight:600">${esc(ad.headline)}</div></div>`:''}
+        ${ad.body?`<div class="m-field"><span class="label">Body</span><div class="v">${esc(ad.body)}</div></div>`:''}
+        ${ctas.length?`<div class="m-field"><span class="label">Call to Action</span><div>${ctas.map(c=>`<span class="cta-tag">${esc(c)}</span>`).join(' ')}</div></div>`:''}
+        ${tgt.language||tgt.location?`<div class="m-field"><span class="label">Targeting</span><div class="v">${tgt.language?'<b style="color:var(--white)">'+esc(tgt.language)+'</b><br>':''}${esc(tgt.location||'')}</div></div>`:''}
+        ${av&&(av.start||av.end)?`<div class="m-field"><span class="label">Availability</span><div class="v">${esc(fmtDate(av.start))} – ${esc(fmtDate(av.end))}</div></div>`:''}
+        ${tl}
+      </div>
+      <div>
+        ${creative?`<div class="m-creative" style="margin-bottom:16px">${creative}</div>`:''}
+        ${ipc.length?`<div class="m-field"><span class="label">Impressions by Country</span><div class="tbl-wrap" style="max-height:200px;overflow-y:auto"><table class="country-tbl"><thead><tr><th>Country</th><th>Share</th></tr></thead><tbody>${ipc.slice(0,40).map(r=>`<tr><td>${esc(r.country)}</td><td class="mono">${esc(r.impressions)}</td></tr>`).join('')}</tbody></table></div></div>`:''}
+      </div>
+      <div class="mfull">
+        ${ad.clickUrl?`<div class="m-field"><span class="label">Destination URL</span><div class="copyrow"><span class="url">${esc(ad.clickUrl)}</span><button class="btn sm" id="mCopyUrl" data-url="${attr(ad.clickUrl)}">Copy</button></div></div>`:''}
+        ${ad.adLibraryUrl?`<a class="btn primary" href="${attr(ad.adLibraryUrl)}" target="_blank" rel="noopener">View on LinkedIn</a>`:''}
+      </div>
+    </div>`;
+}
+
+/* ============================================================
+   12. COMPETITIVE ANALYSIS (6.3)
+   ============================================================ */
+function advertiserStats(){
+  const map=new Map();
+  AppState.rawData.forEach(ad=>{
+    const n=ad.advertiserName||'(unknown)';
+    if(!map.has(n)) map.set(n,{name:n,logo:ad.advertiserLogo,url:ad.advertiserUrl,ads:[]});
+    map.get(n).ads.push(ad);
+  });
+  const out=[...map.values()].map(a=>{
+    const ads=a.ads;
+    const formats=uniq(ads.map(x=>x.format).filter(Boolean));
+    const mids=ads.map(x=>bandMid(x.impressions)).filter(v=>v!==null).sort((x,y)=>x-y);
+    const medMid= mids.length? mids[Math.floor(mids.length/2)] : null;
+    let medBand='—';
+    if(medMid!==null){ medBand=BAND_ORDER.reduce((best,b)=>Math.abs(BAND_MID[b]-medMid)<Math.abs(BAND_MID[best]-medMid)?b:best,BAND_ORDER[0]); }
+    const cta=topOf(ads.flatMap(adCtas));
+    const lang=topOf(ads.map(x=>x.targeting&&x.targeting.language).filter(Boolean));
+    let minS=null,maxE=null;
+    ads.forEach(x=>{ if(x.availability){ if(x.availability.start&&(!minS||x.availability.start<minS))minS=x.availability.start; if(x.availability.end&&(!maxE||x.availability.end>maxE))maxE=x.availability.end; }});
+    const carPct= ads.filter(x=>x.format==='CAROUSEL').length/ads.length*100;
+    const vidPct= ads.filter(x=>x.format==='VIDEO').length/ads.length*100;
+    const impSum= ads.reduce((s,x)=>s+(bandMid(x.impressions)||0),0);
+    return {name:a.name,logo:a.logo,url:a.url,totalAds:ads.length,formats,medMid:medMid??-1,medBand,
+      topCta:cta||'—',topLang:lang||'—',minStart:minS,maxEnd:maxE,carPct,vidPct,impSum, ads};
+  });
+  return out;
+}
+function topOf(arr){
+  if(!arr.length) return null;
+  const m=new Map(); arr.forEach(v=>m.set(v,(m.get(v)||0)+1));
+  return [...m.entries()].sort((a,b)=>b[1]-a[1])[0][0];
+}
+
+function renderCompetitive(){
+  const main=$('#main');
+  const stats=advertiserStats();
+  main.innerHTML = sectionHeadHTML('competitive') + `
+    <div class="panel" style="margin-bottom:18px"><h3>Advertiser Comparison</h3><div class="phint">Click any column header to sort</div>
+      <div class="tbl-wrap" id="compTableWrap"></div></div>
+    <div class="grid2" style="margin-bottom:18px">
+      <div class="panel"><h3>Format Strategy Heatmap</h3><div class="phint">Top 10 advertisers × formats — ad counts</div><div class="heatmap" id="chHeat"></div></div>
+      <div class="panel"><h3>Estimated Impression Share</h3><div class="phint">Band midpoints — directional only</div><div class="chart tall" id="chImpShare"></div>
+        <div class="insight info" style="margin-top:12px"><div class="ico">NOTE</div><div class="txt">Impression data is provided as bands by LinkedIn's Ad Library. Numeric estimates use band midpoints and are directional only.</div></div>
+      </div>
+    </div>
+    <div class="panel"><h3>CTA Strategy by Advertiser</h3><div class="phint">Top 3 CTAs per advertiser (top 10 by ad count)</div><div class="cta-grid" id="ctaGrid"></div></div>
+  `;
+  renderCompTable(stats);
+  renderHeatmap(stats);
+  renderImpShareChart(stats);
+  renderCtaStrategy(stats);
+}
+
+const COMP_COLS=[
+  {k:'logo',label:'',sortable:false},
+  {k:'name',label:'Advertiser'},
+  {k:'totalAds',label:'Total Ads',num:true},
+  {k:'formats',label:'Formats Used'},
+  {k:'medMid',label:'Avg Impr. Band',num:true},
+  {k:'topCta',label:'Top CTA'},
+  {k:'topLang',label:'Top Language'},
+  {k:'minStart',label:'Active Range'},
+  {k:'carPct',label:'Carousel %',num:true},
+  {k:'vidPct',label:'Video %',num:true}
+];
+function renderCompTable(stats){
+  const {col,dir}=AppState.compSort;
+  const sorted=stats.slice().sort((a,b)=>{
+    let va=a[col],vb=b[col];
+    if(typeof va==='string') return va.localeCompare(vb)*dir;
+    return ((va??-1)-(vb??-1))*dir;
+  });
+  const head=`<tr>${COMP_COLS.map(c=>`<th data-col="${c.k}">${esc(c.label)}${c.k===col?`<span class="caret">${dir>0?'▲':'▼'}</span>`:''}</th>`).join('')}</tr>`;
+  const rows=sorted.map(s=>`<tr>
+    <td>${s.logo?`<img class="tbl-logo" src="${attr(s.logo)}" loading="lazy" onerror="imgErr(this)" alt="">`:`<div class="logo-fallback" style="width:22px;height:22px;font-size:0.6rem;background:${colorFor(s.name)}">${esc((s.name||'?')[0].toUpperCase())}</div>`}</td>
+    <td>${s.url?`<a href="${attr(s.url)}" target="_blank" rel="noopener">${esc(s.name)}</a>`:esc(s.name)}</td>
+    <td class="mono">${s.totalAds}</td>
+    <td><span class="trunc" title="${attr(s.formats.map(fmtLabel).join(', '))}">${esc(s.formats.map(fmtLabel).join(', '))||'—'}</span></td>
+    <td>${esc(s.medBand)}</td>
+    <td>${esc(s.topCta)}</td>
+    <td>${esc(s.topLang)}</td>
+    <td class="mono" style="font-size:0.66rem">${s.minStart?esc(fmtDate(s.minStart)):'—'}${s.maxEnd?'<br>→ '+esc(fmtDate(s.maxEnd)):''}</td>
+    <td class="mono">${s.carPct.toFixed(0)}%</td>
+    <td class="mono">${s.vidPct.toFixed(0)}%</td>
+  </tr>`).join('');
+  $('#compTableWrap').innerHTML=`<table><thead>${head}</thead><tbody>${rows}</tbody></table>`;
+  $$('#compTableWrap th[data-col]').forEach(th=>{
+    const c=COMP_COLS.find(x=>x.k===th.dataset.col);
+    if(c.sortable===false) return;
+    th.addEventListener('click',()=>{
+      if(AppState.compSort.col===th.dataset.col) AppState.compSort.dir*=-1;
+      else AppState.compSort={col:th.dataset.col,dir: (c.num?-1:1)};
+      renderCompTable(stats);
+    });
+  });
+}
+
+function topAdvertisers(stats,n){ return stats.slice().sort((a,b)=>b.totalAds-a.totalAds).slice(0,n); }
+
+function renderHeatmap(stats){
+  const c=makeChart($('#chHeat')); if(!c) return;
+  const top=topAdvertisers(stats,10);
+  const formats=[...optionCounts(a=>a.format).entries()].sort((a,b)=>b[1]-a[1]).map(e=>e[0]);
+  if(!top.length||!formats.length){ c.setOption({backgroundColor:'transparent'}); return; }
+  const advNames=top.map(s=>s.name);
+  const data=[]; let max=0;
+  top.forEach((s,yi)=>{
+    formats.forEach((fmt,xi)=>{
+      const cnt=s.ads.filter(a=>a.format===fmt).length;
+      max=Math.max(max,cnt);
+      data.push([xi,yi,cnt]);
+    });
+  });
+  c.setOption({
+    backgroundColor:'transparent',
+    grid:{left:4,right:14,top:30,bottom:24,containLabel:true},
+    tooltip:{...baseTooltip,formatter:p=>`${esc(advNames[p.value[1]])} ran <b>${p.value[2]}</b> ${fmtLabel(formats[p.value[0]])} ad${p.value[2]===1?'':'s'}`},
+    xAxis:{type:'category',data:formats.map(fmtLabel),splitArea:{show:true},axisLabel:{color:C.grey,fontSize:9,rotate:30},axisLine:{lineStyle:{color:C.border2}}},
+    yAxis:{type:'category',data:advNames,axisLabel:{color:C.grey,fontSize:9,width:90,overflow:'truncate'},axisLine:{lineStyle:{color:C.border2}}},
+    visualMap:{min:0,max:max||1,calculable:true,orient:'horizontal',left:'center',top:0,
+      inRange:{color:['#0a0a0a','#3a2f5c','#6b4fa3',C.purple]},
+      textStyle:{color:C.grey,fontSize:10}},
+    series:[{type:'heatmap',data,label:{show:true,color:C.white,fontSize:10,formatter:p=>p.value[2]||''},
+      itemStyle:{borderColor:C.border,borderWidth:1},emphasis:{itemStyle:{borderColor:C.white}}}]
+  });
+}
+
+function renderImpShareChart(stats){
+  const c=makeChart($('#chImpShare')); if(!c) return;
+  const withImp=stats.filter(s=>s.impSum>0).sort((a,b)=>b.impSum-a.impSum).slice(0,12);
+  if(!withImp.length){ c.setOption({backgroundColor:'transparent',title:{text:'No impression data',left:'center',top:'center',textStyle:{color:C.grey,fontWeight:400,fontSize:13}}}); return; }
+  const total=withImp.reduce((s,x)=>s+x.impSum,0);
+  const sorted=withImp.slice().reverse();
+  c.setOption({
+    backgroundColor:'transparent',
+    grid:{left:4,right:48,top:8,bottom:8,containLabel:true},
+    tooltip:{...baseTooltip,trigger:'item',formatter:p=>`${esc(p.name)}<br/>est. <b>${(p.value).toLocaleString()}</b> impressions (${(p.value/total*100).toFixed(1)}%)`},
+    xAxis:{type:'value',...axisStyle,axisLabel:{color:C.grey,fontSize:10,formatter:v=>v>=1000?(v/1000)+'k':v}},
+    yAxis:{type:'category',data:sorted.map(s=>s.name),axisLabel:{color:C.grey,fontSize:10,width:100,overflow:'truncate'},axisLine:{lineStyle:{color:C.border2}}},
+    series:[{type:'bar',data:sorted.map(s=>({value:s.impSum,itemStyle:{color:colorFor(s.name)}})),barWidth:'60%',
+      label:{show:true,position:'right',color:C.light,fontSize:10,formatter:p=>(p.value/total*100).toFixed(0)+'%'}}]
+  });
+}
+
+function renderCtaStrategy(stats){
+  const grid=$('#ctaGrid');
+  const top=topAdvertisers(stats,10);
+  grid.innerHTML=top.map(s=>{
+    const m=new Map(); s.ads.flatMap(adCtas).forEach(c=>m.set(c,(m.get(c)||0)+1));
+    const top3=[...m.entries()].sort((a,b)=>b[1]-a[1]).slice(0,3);
+    return `<div class="cta-card"><div class="ch" title="${attr(s.name)}">${esc(s.name)}</div>
+      ${top3.length?top3.map(([c,n])=>`<div class="crow"><span>${esc(c)}</span><span class="n">${n}</span></div>`).join(''):'<div class="crow" style="color:var(--grey)">No CTAs</div>'}</div>`;
+  }).join('');
+}
+
+/* ============================================================
+   13. CREATIVE INTELLIGENCE (6.4)
+   ============================================================ */
+function renderCreative(){
+  const main=$('#main');
+  const advs=[...optionCounts(a=>a.advertiserName).entries()].sort((a,b)=>b[1]-a[1]);
+  const fmts=[...optionCounts(a=>a.format).entries()].sort((a,b)=>b[1]-a[1]);
+  main.innerHTML = sectionHeadHTML('creative') + `
+    <div class="panel" style="margin-bottom:18px"><h3>Image Gallery</h3>
+      <div class="explorer-toolbar" style="margin:10px 0 16px">
+        <select id="galAdv" style="width:auto"><option value="">All advertisers</option>${advs.map(a=>`<option value="${attr(a[0])}">${esc(a[0])} (${a[1]})</option>`).join('')}</select>
+        <select id="galFmt" style="width:auto"><option value="">All formats</option>${fmts.map(f=>`<option value="${attr(f[0])}">${esc(fmtLabel(f[0]))}</option>`).join('')}</select>
+        <label class="checkrow" style="font-size:0.74rem"><input type="checkbox" id="galHigh"><span>Show only high-impression ads (10k+)</span></label>
+        <div class="toolbar-spacer"></div><div class="result-count" id="galCount"></div>
+      </div>
+      <div class="gallery" id="gallery"></div>
+    </div>
+    <div class="panel" style="margin-bottom:18px"><h3>Headline &amp; Copy Analysis</h3><div class="phint">Word frequency across body and headline (stopwords removed)</div>
+      <div class="tabs"><div class="tab active" data-wtab="all">All Advertisers</div><div class="tab" data-wtab="per">Per Advertiser</div></div>
+      <div id="wordControls" style="margin-bottom:12px"></div>
+      <div class="tbl-wrap" id="wordTableWrap" style="max-height:380px;overflow-y:auto"></div>
+      <h3 style="margin-top:22px">Key Themes</h3><div class="phint">Ads mentioning each marketing theme cluster</div>
+      <div class="theme-grid" id="themeGrid"></div>
+    </div>
+    <div class="panel"><h3>CTA Frequency</h3><div class="phint">Green = acquisition · Blue = awareness · Grey = other</div><div class="chart tall" id="chCta"></div></div>
+  `;
+  // gallery
+  const galState={adv:'',fmt:'',high:false};
+  function renderGallery(){
+    let ads=AppState.rawData.filter(a=>hasImage(a));
+    if(galState.adv) ads=ads.filter(a=>a.advertiserName===galState.adv);
+    if(galState.fmt) ads=ads.filter(a=>a.format===galState.fmt);
+    if(galState.high) ads=ads.filter(a=>(bandMid(a.impressions)||0)>=10000);
+    const tiles=[];
+    ads.forEach(ad=>{
+      const fi=AppState.filteredData.indexOf(ad); // may be -1 if filtered out globally
+      const idx=AppState.rawData.indexOf(ad);
+      adImages(ad).slice(0,4).forEach(url=>{
+        tiles.push({ad,url,idx});
+      });
+    });
+    $('#galCount').innerHTML=`<b>${tiles.length}</b> images`;
+    const g=$('#gallery');
+    if(!tiles.length){ g.innerHTML='<div class="empty-state" style="padding:30px"><div class="ttl">No images</div></div>'; return; }
+    g.innerHTML=tiles.slice(0,400).map((t,i)=>{
+      const band=normBand(t.ad.impressions);
+      return `<div class="gtile" data-raw="${t.idx}">
+        <img loading="lazy" src="${attr(t.url)}" data-adv="${attr(t.ad.advertiserName)}" data-fmt="${attr(fmtLabel(t.ad.format))}" onerror="imgErr(this)" alt="">
+        <span class="pill g-fmt" style="color:${fmtColor(t.ad.format)};border-color:${fmtColor(t.ad.format)};background:rgba(0,0,0,.6)">${esc(fmtLabel(t.ad.format))}</span>
+        ${band?`<span class="pill g-imp" style="color:${bandColor(band)};border-color:${bandColor(band)};background:rgba(0,0,0,.6)">${esc(band)}</span>`:''}
+        ${t.ad.advertiserLogo?`<img class="g-logo" src="${attr(t.ad.advertiserLogo)}" loading="lazy" onerror="imgErr(this)" alt="">`:''}
+      </div>`;
+    }).join('');
+    if(tiles.length>400) $('#galCount').innerHTML=`<b>400</b> of ${tiles.length} images (capped)`;
+    $$('.gtile',g).forEach(t=>t.addEventListener('click',()=>{
+      const rawIdx=parseInt(t.dataset.raw,10);
+      const ad=AppState.rawData[rawIdx];
+      // ensure ad is in filteredData for modal nav; if not, show it standalone
+      let fi=AppState.filteredData.indexOf(ad);
+      if(fi<0){ AppState.filteredData=[ad]; fi=0; }
+      openModal(fi);
+    }));
+  }
+  $('#galAdv').addEventListener('change',e=>{galState.adv=e.target.value;renderGallery();});
+  $('#galFmt').addEventListener('change',e=>{galState.fmt=e.target.value;renderGallery();});
+  $('#galHigh').addEventListener('change',e=>{galState.high=e.target.checked;renderGallery();});
+  renderGallery();
+
+  // word analysis
+  const wState={tab:'all',adv:''};
+  function tokens(ads){
+    const freq=new Map(); const adCount=new Map();
+    ads.forEach(ad=>{
+      const text=[(ad.body||''),(ad.headline||'')].join(' ').toLowerCase();
+      const words=uniq(text.replace(/[^a-z0-9\s]/g,' ').split(/\s+/).filter(w=>w.length>2 && !STOPWORDS.has(w) && isNaN(w)));
+      const all=text.replace(/[^a-z0-9\s]/g,' ').split(/\s+/).filter(w=>w.length>2 && !STOPWORDS.has(w) && isNaN(w));
+      all.forEach(w=>freq.set(w,(freq.get(w)||0)+1));
+      words.forEach(w=>adCount.set(w,(adCount.get(w)||0)+1));
+    });
+    return {freq,adCount,total:ads.length};
+  }
+  function renderWords(){
+    const ctrl=$('#wordControls');
+    let ads=AppState.rawData;
+    if(wState.tab==='per'){
+      const advList=[...optionCounts(a=>a.advertiserName).entries()].sort((a,b)=>b[1]-a[1]);
+      if(!wState.adv) wState.adv=advList[0]?advList[0][0]:'';
+      ctrl.innerHTML=`<select id="wAdv" style="width:auto">${advList.map(a=>`<option value="${attr(a[0])}" ${a[0]===wState.adv?'selected':''}>${esc(a[0])} (${a[1]})</option>`).join('')}</select>`;
+      $('#wAdv').addEventListener('change',e=>{wState.adv=e.target.value;renderWords();});
+      ads=AppState.rawData.filter(a=>a.advertiserName===wState.adv);
+    } else ctrl.innerHTML='';
+    const {freq,adCount,total}=tokens(ads);
+    let rows=[...freq.entries()].map(([w,f])=>({w,f,pct:(adCount.get(w)||0)/Math.max(total,1)*100}));
+    const {col,dir}=AppState.wordSort;
+    rows.sort((a,b)=> col==='word'?a.w.localeCompare(b.w)*dir : ((a[col==='freq'?'f':'pct'])-(b[col==='freq'?'f':'pct']))*dir );
+    rows=rows.slice(0,80);
+    const caret=k=>AppState.wordSort.col===k?`<span class="caret">${dir>0?'▲':'▼'}</span>`:'';
+    $('#wordTableWrap').innerHTML=`<table><thead><tr>
+      <th>Rank</th><th data-wc="word">Word${caret('word')}</th><th data-wc="freq">Frequency${caret('freq')}</th><th data-wc="pct">% of Ads${caret('pct')}</th></tr></thead>
+      <tbody>${rows.map((r,i)=>`<tr><td class="mono">${i+1}</td><td style="${i<10?'color:var(--purple);font-weight:600':''}">${esc(r.w)}</td><td class="mono">${r.f}</td><td class="mono">${r.pct.toFixed(1)}%</td></tr>`).join('')||'<tr><td colspan="4" style="color:var(--grey)">No words</td></tr>'}</tbody></table>`;
+    $$('#wordTableWrap th[data-wc]').forEach(th=>th.addEventListener('click',()=>{
+      const k=th.dataset.wc;
+      if(AppState.wordSort.col===k)AppState.wordSort.dir*=-1; else AppState.wordSort={col:k,dir:k==='word'?1:-1};
+      renderWords();
+    }));
+  }
+  $$('.tab[data-wtab]').forEach(t=>t.addEventListener('click',()=>{
+    $$('.tab[data-wtab]').forEach(x=>x.classList.toggle('active',x===t));
+    wState.tab=t.dataset.wtab; renderWords();
+  }));
+  renderWords();
+
+  // themes
+  renderThemes();
+  // cta chart
+  renderCtaChart();
+}
+
+function renderThemes(){
+  const grid=$('#themeGrid');
+  const total=AppState.rawData.length||1;
+  grid.innerHTML=THEME_CLUSTERS.map(cluster=>{
+    const matched=AppState.rawData.filter(ad=>{
+      const t=[(ad.body||''),(ad.headline||'')].join(' ').toLowerCase();
+      return cluster.terms.some(term=>t.includes(term));
+    });
+    // by advertiser breakdown
+    const byAdv=new Map(); matched.forEach(a=>byAdv.set(a.advertiserName,(byAdv.get(a.advertiserName)||0)+1));
+    const top=[...byAdv.entries()].sort((a,b)=>b[1]-a[1]).slice(0,3);
+    return `<div class="theme-card" style="border-left:3px solid ${cluster.color}">
+      <div class="th">${esc(cluster.name)}</div>
+      <div class="tc" style="color:${cluster.color}">${matched.length}</div>
+      <div class="label">ads (${(matched.length/total*100).toFixed(0)}%)</div>
+      <div class="ts">${top.length?top.map(([n,c])=>`<span>${esc(n)}</span> ${c}`).join('<br>'):'No matches'}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderCtaChart(){
+  const c=makeChart($('#chCta')); if(!c) return;
+  const m=new Map(); AppState.rawData.flatMap(adCtas).forEach(x=>m.set(x,(m.get(x)||0)+1));
+  const entries=[...m.entries()].sort((a,b)=>a[1]-b[1]);
+  if(!entries.length){ c.setOption({backgroundColor:'transparent',title:{text:'No CTA data',left:'center',top:'center',textStyle:{color:C.grey,fontWeight:400,fontSize:13}}}); return; }
+  c.setOption({
+    backgroundColor:'transparent',
+    grid:{left:4,right:40,top:8,bottom:8,containLabel:true},
+    tooltip:{...baseTooltip,trigger:'item',formatter:p=>`${esc(p.name)}<br/><b>${p.value}</b> ads · ${ctaClass(p.name).type}`},
+    xAxis:{type:'value',...axisStyle},
+    yAxis:{type:'category',data:entries.map(e=>e[0]),axisLabel:{color:C.grey,fontSize:10,width:120,overflow:'truncate'},axisLine:{lineStyle:{color:C.border2}}},
+    series:[{type:'bar',data:entries.map(e=>({value:e[1],itemStyle:{color:ctaClass(e[0]).color}})),barWidth:'60%',label:{show:true,position:'right',color:C.light,fontSize:10}}]
+  });
+}
+
+/* ============================================================
+   14. GEOGRAPHIC INTELLIGENCE (6.5)
+   ============================================================ */
+function renderGeographic(){
+  const main=$('#main');
+  main.innerHTML = sectionHeadHTML('geographic') + `
+    <div class="panel" style="margin-bottom:18px"><h3>Country Coverage</h3><div class="phint">Parsed from impressionsPerCountry · IFS core markets highlighted</div>
+      <div class="tbl-wrap" id="geoTableWrap" style="max-height:460px;overflow-y:auto"></div></div>
+    <div class="grid2">
+      <div class="panel"><h3>Advertiser × Country Matrix</h3><div class="phint">Top 10 advertisers × top 15 countries — ad counts</div><div class="heatmap" id="chGeoHeat"></div></div>
+      <div class="panel"><h3>Targeting Language</h3><div class="phint">Distribution of targeting.language</div><div class="chart" id="chLang"></div>
+        <div class="tbl-wrap" id="langTableWrap" style="margin-top:12px;max-height:200px;overflow-y:auto"></div></div>
+    </div>`;
+  const hasGeo=AppState.rawData.some(a=>Array.isArray(a.impressionsPerCountry)&&a.impressionsPerCountry.length);
+  if(!hasGeo){
+    $('#geoTableWrap').innerHTML='<div class="empty-state" style="padding:30px"><div class="ttl">No country-level impression data</div><div class="ds">This dataset has no impressionsPerCountry values.</div></div>';
+  } else {
+    renderGeoTable();
+    renderGeoHeatmap();
+  }
+  renderLangChart();
+}
+
+function geoCountryStats(){
+  const map=new Map();
+  AppState.rawData.forEach(ad=>{
+    const ipc=Array.isArray(ad.impressionsPerCountry)?ad.impressionsPerCountry:[];
+    ipc.forEach(r=>{
+      if(!r||!r.country)return;
+      if(!map.has(r.country)) map.set(r.country,{country:r.country,ads:0,advs:new Set(),over1:0});
+      const o=map.get(r.country);
+      o.ads++; o.advs.add(ad.advertiserName);
+      if(parsePct(r.impressions)>1) o.over1++;
+    });
+  });
+  return [...map.values()].map(o=>({country:o.country,ads:o.ads,advs:o.advs.size,density:o.over1/o.ads*100}));
+}
+function renderGeoTable(){
+  let stats=geoCountryStats();
+  if(!AppState.geoSort) AppState.geoSort={col:'ads',dir:-1};
+  const {col,dir}=AppState.geoSort;
+  stats.sort((a,b)=> typeof a[col]==='string'?a[col].localeCompare(b[col])*dir : (a[col]-b[col])*dir);
+  const caret=k=>col===k?`<span class="caret">${dir>0?'▲':'▼'}</span>`:'';
+  const rows=stats.map(s=>{
+    const core=IFS_MARKETS.includes(s.country);
+    return `<tr><td style="${core?'color:var(--blue);font-weight:600':''}">${esc(s.country)}${core?' ·':''}</td>
+      <td class="mono">${s.ads}</td><td class="mono">${s.advs}</td><td class="mono">${s.density.toFixed(0)}%</td></tr>`;
+  }).join('');
+  $('#geoTableWrap').innerHTML=`<table><thead><tr>
+    <th data-gc="country">Country${caret('country')}</th><th data-gc="ads">Ads Targeting${caret('ads')}</th>
+    <th data-gc="advs">Advertisers${caret('advs')}</th><th data-gc="density">Impr. Density${caret('density')}</th></tr></thead>
+    <tbody>${rows}</tbody></table>`;
+  $$('#geoTableWrap th[data-gc]').forEach(th=>th.addEventListener('click',()=>{
+    const k=th.dataset.gc;
+    if(AppState.geoSort.col===k)AppState.geoSort.dir*=-1; else AppState.geoSort={col:k,dir:k==='country'?1:-1};
+    renderGeoTable();
+  }));
+}
+function renderGeoHeatmap(){
+  const c=makeChart($('#chGeoHeat')); if(!c) return;
+  const stats=advertiserStats();
+  const top=topAdvertisers(stats,10);
+  const cStats=geoCountryStats().sort((a,b)=>b.ads-a.ads).slice(0,15);
+  const countries=cStats.map(c=>c.country);
+  if(!top.length||!countries.length){ c.setOption({backgroundColor:'transparent'}); return; }
+  const advNames=top.map(s=>s.name);
+  const data=[]; let max=0;
+  top.forEach((s,yi)=>countries.forEach((country,xi)=>{
+    const cnt=s.ads.filter(a=>Array.isArray(a.impressionsPerCountry)&&a.impressionsPerCountry.some(r=>r.country===country)).length;
+    max=Math.max(max,cnt); data.push([xi,yi,cnt]);
+  }));
+  c.setOption({
+    backgroundColor:'transparent',
+    grid:{left:4,right:14,top:30,bottom:40,containLabel:true},
+    tooltip:{...baseTooltip,formatter:p=>`${esc(advNames[p.value[1]])} — <b>${p.value[2]}</b> ads in ${esc(countries[p.value[0]])}`},
+    xAxis:{type:'category',data:countries,axisLabel:{color:C.grey,fontSize:9,rotate:38},axisLine:{lineStyle:{color:C.border2}}},
+    yAxis:{type:'category',data:advNames,axisLabel:{color:C.grey,fontSize:9,width:90,overflow:'truncate'},axisLine:{lineStyle:{color:C.border2}}},
+    visualMap:{min:0,max:max||1,calculable:true,orient:'horizontal',left:'center',top:0,inRange:{color:['#0a0a0a','#13403b','#1d8b7e',C.teal]},textStyle:{color:C.grey,fontSize:10}},
+    series:[{type:'heatmap',data,label:{show:true,color:C.white,fontSize:9,formatter:p=>p.value[2]||''},itemStyle:{borderColor:C.border,borderWidth:1}}]
+  });
+}
+function renderLangChart(){
+  const c=makeChart($('#chLang')); if(!c) return;
+  const m=optionCounts(a=>a.targeting&&a.targeting.language);
+  const entries=[...m.entries()].sort((a,b)=>b[1]-a[1]);
+  if(!entries.length){ c.setOption({backgroundColor:'transparent',title:{text:'No language data',left:'center',top:'center',textStyle:{color:C.grey,fontWeight:400,fontSize:13}}}); $('#langTableWrap').innerHTML=''; return; }
+  const palette=[C.purple,C.blue,C.green,C.amber,C.teal,C.red,C.grey];
+  c.setOption({
+    backgroundColor:'transparent',
+    tooltip:{...baseTooltip,trigger:'item',formatter:p=>`${esc(p.name)}<br/><b>${p.value}</b> (${p.percent}%)`},
+    legend:{bottom:0,textStyle:{color:C.grey,fontSize:10},itemWidth:9,itemHeight:9},
+    series:[{type:'pie',radius:['45%','70%'],center:['50%','44%'],data:entries.map((e,i)=>({name:e[0],value:e[1],itemStyle:{color:palette[i%palette.length]}})),
+      label:{color:C.light,fontSize:11,formatter:'{b}: {c}'},labelLine:{lineStyle:{color:C.border2}},itemStyle:{borderColor:C.surface,borderWidth:2}}]
+  });
+  const total=entries.reduce((s,e)=>s+e[1],0);
+  const rows=entries.map(([lang,cnt])=>{
+    const advs=optionCounts(a=>(a.targeting&&a.targeting.language===lang)?a.advertiserName:null);
+    const top=[...advs.entries()].sort((a,b)=>b[1]-a[1]).slice(0,3).map(e=>e[0]).join(', ');
+    return `<tr><td>${esc(lang)}</td><td class="mono">${cnt}</td><td class="mono">${(cnt/total*100).toFixed(0)}%</td><td><span class="trunc" title="${attr(top)}">${esc(top)}</span></td></tr>`;
+  }).join('');
+  $('#langTableWrap').innerHTML=`<table><thead><tr><th>Language</th><th>Count</th><th>%</th><th>Top Advertisers</th></tr></thead><tbody>${rows}</tbody></table>`;
+}
+
+/* ============================================================
+   15. THOUGHT LEADERSHIP (6.6)
+   ============================================================ */
+function renderThought(){
+  const main=$('#main');
+  const tlAds=AppState.rawData.filter(a=>a.thoughtLeaderMemberName);
+  const advs=[...new Set(tlAds.map(a=>a.advertiserName))].sort();
+  main.innerHTML = sectionHeadHTML('thought') + `
+    ${tlAds.length?`<div class="explorer-toolbar" style="margin-bottom:16px">
+      <select id="tlAdv" style="width:auto"><option value="">All companies</option>${advs.map(a=>`<option value="${attr(a)}">${esc(a)}</option>`).join('')}</select>
+      <div class="toolbar-spacer"></div><div class="result-count" id="tlCount"></div></div>
+      <div class="tl-grid" id="tlGrid"></div>`
+    :`<div class="empty-state"><div class="icon-big mono">—</div><div class="ttl">No thought leadership ads</div><div class="ds">This dataset contains no ads with a <b>thoughtLeaderMemberName</b>. This section tracks competitor executives amplified via paid LinkedIn.</div></div>`}
+  `;
+  if(!tlAds.length) return;
+  function renderTL(filterAdv){
+    let ads=tlAds; if(filterAdv) ads=ads.filter(a=>a.advertiserName===filterAdv);
+    // group by leader
+    const map=new Map();
+    ads.forEach(a=>{
+      const key=a.thoughtLeaderMemberName+'|'+a.advertiserName;
+      if(!map.has(key)) map.set(key,{name:a.thoughtLeaderMemberName,title:a.thoughtLeaderJobTitle,url:a.thoughtLeaderMemberUrl,img:a.thoughtLeaderMemberImageUrl,company:a.advertiserName,ads:[]});
+      map.get(key).ads.push(a);
+    });
+    const leaders=[...map.values()].sort((a,b)=>b.ads.length-a.ads.length);
+    $('#tlCount').innerHTML=`<b>${leaders.length}</b> thought leader${leaders.length===1?'':'s'} · ${ads.length} ads`;
+    $('#tlGrid').innerHTML=leaders.map(l=>{
+      let minS=null,maxE=null;
+      l.ads.forEach(x=>{if(x.availability){if(x.availability.start&&(!minS||x.availability.start<minS))minS=x.availability.start;if(x.availability.end&&(!maxE||x.availability.end>maxE))maxE=x.availability.end;}});
+      const preview=(l.ads[0].body||'').slice(0,100);
+      return `<div class="tl-card">
+        <div class="tl-head">
+          ${l.img?`<img class="tl-avatar" src="${attr(l.img)}" onerror="imgErr(this)" alt="">`:`<div class="logo-fallback tl-avatar" style="background:${colorFor(l.name)}">${esc((l.name||'?')[0].toUpperCase())}</div>`}
+          <div><div class="tl-name">${l.url?`<a href="${attr(l.url)}" target="_blank" rel="noopener">${esc(l.name)}</a>`:esc(l.name)}</div>
+          <div class="tl-title">${esc(l.title||'')}</div></div>
+        </div>
+        <div class="label">${esc(l.company)}</div>
+        <div class="tl-meta"><span>Posts <b>${l.ads.length}</b></span>${minS?`<span>${esc(fmtDate(minS))} – ${esc(fmtDate(maxE))}</span>`:''}</div>
+        <div class="tl-preview">${esc(preview)}${preview.length>=100?'…':''}</div>
+      </div>`;
+    }).join('');
+  }
+  $('#tlAdv').addEventListener('change',e=>renderTL(e.target.value));
+  renderTL('');
+}
+
+/* ============================================================
+   16. RAW DATA TABLE (6.7)
+   ============================================================ */
+const RAW_PAGE=50;
+const RAW_COLS=[
+  {k:'adId',label:'Ad ID'},{k:'advertiserName',label:'Advertiser'},{k:'format',label:'Format'},
+  {k:'impressions',label:'Impressions'},{k:'headline',label:'Headline'},{k:'body',label:'Body'},
+  {k:'ctas',label:'CTAs'},{k:'paidBy',label:'Paid By'},{k:'start',label:'Start'},{k:'end',label:'End'},
+  {k:'location',label:'Location'},{k:'language',label:'Language'},{k:'link',label:'Link',sortable:false}
+];
+function rawCellValue(ad,k){
+  switch(k){
+    case 'start': return ad.availability&&ad.availability.start||'';
+    case 'end': return ad.availability&&ad.availability.end||'';
+    case 'location': return ad.targeting&&ad.targeting.location||'';
+    case 'language': return ad.targeting&&ad.targeting.language||'';
+    case 'ctas': return adCtas(ad).join(', ');
+    default: return ad[k]===undefined||ad[k]===null?'':ad[k];
+  }
+}
+function rawRows(){
+  let rows=AppState.filteredData.slice();
+  const q=(AppState.rawSearch||'').trim().toLowerCase();
+  if(q) rows=rows.filter(ad=>RAW_COLS.filter(c=>c.k!=='link').map(c=>rawCellValue(ad,c.k)).join(' ').toLowerCase().includes(q));
+  const {col,dir}=AppState.rawSort;
+  if(col) rows.sort((a,b)=>String(rawCellValue(a,col)).localeCompare(String(rawCellValue(b,col)),undefined,{numeric:true})*dir);
+  return rows;
+}
+function renderRaw(){
+  const main=$('#main');
+  main.innerHTML = sectionHeadHTML('raw') + `
+    <div class="panel">
+      <div class="explorer-toolbar" style="margin-bottom:14px">
+        <input type="search" id="rawSearch" placeholder="Search all columns…" style="max-width:280px" value="${attr(AppState.rawSearch)}">
+        <div class="result-count" id="rawCount"></div>
+        <div class="toolbar-spacer"></div>
+        <button class="btn sm" id="exportCsv">Export CSV</button>
+        <button class="btn sm" id="exportJson">Export JSON</button>
+      </div>
+      <div class="phint" style="margin-bottom:10px">Click a row to copy key fields (tab-separated) for Excel.</div>
+      <div class="tbl-wrap" id="rawTableWrap"></div>
+      <div id="rawPager"></div>
+    </div>`;
+  $('#rawSearch').addEventListener('input',debounce(e=>{AppState.rawSearch=e.target.value;AppState.rawPage=0;renderRawTable();},200));
+  $('#exportCsv').addEventListener('click',exportCSV);
+  $('#exportJson').addEventListener('click',exportJSON);
+  renderRawTable();
+}
+function renderRawTable(){
+  const rows=rawRows();
+  $('#rawCount').innerHTML=`<b>${rows.length.toLocaleString()}</b> rows`;
+  if(!rows.length){ $('#rawTableWrap').innerHTML=emptyFilterHTML(); $('#rawPager').innerHTML=''; return; }
+  const pages=Math.ceil(rows.length/RAW_PAGE);
+  AppState.rawPage=Math.min(AppState.rawPage,pages-1);
+  const start=AppState.rawPage*RAW_PAGE;
+  const slice=rows.slice(start,start+RAW_PAGE);
+  const {col,dir}=AppState.rawSort;
+  const caret=k=>col===k?`<span class="caret">${dir>0?'▲':'▼'}</span>`:'';
+  const head=`<tr>${RAW_COLS.map(c=>`<th ${c.sortable!==false?`data-rc="${c.k}"`:''}>${esc(c.label)}${caret(c.k)}</th>`).join('')}</tr>`;
+  const body=slice.map((ad,i)=>`<tr data-i="${start+i}">
+    <td class="mono">${esc(ad.adId)}</td><td>${esc(ad.advertiserName)}</td>
+    <td><span class="pill" style="color:${fmtColor(ad.format)};border-color:${fmtColor(ad.format)}">${esc(fmtLabel(ad.format))}</span></td>
+    <td class="mono">${esc(normBand(ad.impressions)||'—')}</td>
+    <td><span class="trunc">${esc(ad.headline||'')}</span></td>
+    <td><span class="trunc" title="${attr((ad.body||'').slice(0,300))}">${esc((ad.body||'').slice(0,80))}${(ad.body||'').length>80?'…':''}</span></td>
+    <td><span class="trunc">${esc(adCtas(ad).join(', '))}</span></td>
+    <td><span class="trunc">${esc(ad.paidBy||'')}</span></td>
+    <td class="mono" style="font-size:0.66rem">${esc((ad.availability&&ad.availability.start)||'')}</td>
+    <td class="mono" style="font-size:0.66rem">${esc((ad.availability&&ad.availability.end)||'')}</td>
+    <td><span class="trunc">${esc((ad.targeting&&ad.targeting.location)||'')}</span></td>
+    <td>${esc((ad.targeting&&ad.targeting.language)||'')}</td>
+    <td>${ad.adLibraryUrl?`<a href="${attr(ad.adLibraryUrl)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">View</a>`:''}</td>
+  </tr>`).join('');
+  $('#rawTableWrap').innerHTML=`<table class="clickable"><thead>${head}</thead><tbody>${body}</tbody></table>`;
+  $$('#rawTableWrap th[data-rc]').forEach(th=>th.addEventListener('click',()=>{
+    const k=th.dataset.rc;
+    if(AppState.rawSort.col===k)AppState.rawSort.dir*=-1; else AppState.rawSort={col:k,dir:1};
+    renderRawTable();
+  }));
+  $$('#rawTableWrap tbody tr').forEach(tr=>tr.addEventListener('click',()=>{
+    const ad=rows[parseInt(tr.dataset.i,10)];
+    const fields=[ad.adId,ad.advertiserName,ad.format,normBand(ad.impressions),ad.headline,ad.body,adCtas(ad).join('; '),ad.paidBy,(ad.availability&&ad.availability.start),(ad.availability&&ad.availability.end),(ad.targeting&&ad.targeting.location),(ad.targeting&&ad.targeting.language),ad.adLibraryUrl].map(x=>(x===undefined||x===null)?'':String(x).replace(/\t|\n/g,' ')).join('\t');
+    navigator.clipboard.writeText(fields).then(()=>toast('Row copied to clipboard','green')).catch(()=>toast('Copy failed','red'));
+  }));
+  $('#rawPager').innerHTML=`<div class="pager">
+    <button class="btn sm" id="rawPrev" ${AppState.rawPage===0?'disabled':''}>‹ Prev</button>
+    <span>Page ${AppState.rawPage+1} / ${pages}</span>
+    <button class="btn sm" id="rawNext" ${AppState.rawPage>=pages-1?'disabled':''}>Next ›</button></div>`;
+  $('#rawPrev').addEventListener('click',()=>{AppState.rawPage--;renderRawTable();});
+  $('#rawNext').addEventListener('click',()=>{AppState.rawPage++;renderRawTable();});
+}
+
+/* ============================================================
+   17. EXPORT (6.7)
+   ============================================================ */
+function download(filename,content,mime){
+  const blob=new Blob([content],{type:mime});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=url; a.download=filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+function exportCSV(){
+  const rows=rawRows();
+  if(!rows.length){ toast('Nothing to export','amber'); return; }
+  const cols=RAW_COLS.filter(c=>c.k!=='link');
+  const header=cols.map(c=>c.label).concat('Ad Library URL');
+  const esc2=v=>{ const s=(v===undefined||v===null)?'':String(v); return /[",\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s; };
+  const lines=[header.join(',')];
+  rows.forEach(ad=>{
+    const vals=cols.map(c=>rawCellValue(ad,c.k)).concat(ad.adLibraryUrl||'');
+    lines.push(vals.map(esc2).join(','));
+  });
+  download('linkedin-ads-export.csv','﻿'+lines.join('\r\n'),'text/csv;charset=utf-8');
+  toast(`Exported ${rows.length} rows to CSV`,'green');
+}
+function exportJSON(){
+  const rows=rawRows();
+  if(!rows.length){ toast('Nothing to export','amber'); return; }
+  download('linkedin-ads-export.json',JSON.stringify(rows,null,2),'application/json');
+  toast(`Exported ${rows.length} rows to JSON`,'green');
+}
+
+/* ============================================================
+   18. EVENT LISTENERS & KEYBOARD
+   ============================================================ */
+function initEvents(){
+  $('#loadBtn').addEventListener('click',()=>$('#fileInput').click());
+  $('#fileInput').addEventListener('change',e=>{ handleFiles(e.target.files); e.target.value=''; });
+  $('#sampleBtn').addEventListener('click',loadSampleData);
+  $('#clearBtn').addEventListener('click',clearAllData);
+  $('#helpBtn').addEventListener('click',()=>$('#scOverlay').classList.add('open'));
+  $('#scClose').addEventListener('click',()=>$('#scOverlay').classList.remove('open'));
+  $('#hamburgerBtn').addEventListener('click',()=>$('#sidebar').classList.toggle('open'));
+
+  $$('.navlink').forEach(n=>n.addEventListener('click',()=>setSection(n.dataset.section)));
+
+  // close modals on overlay click
+  $('#modalOverlay').addEventListener('click',e=>{ if(e.target===$('#modalOverlay')) closeModal(); });
+  $('#scOverlay').addEventListener('click',e=>{ if(e.target===$('#scOverlay')) $('#scOverlay').classList.remove('open'); });
+
+  document.addEventListener('keydown',e=>{
+    const tag=(e.target.tagName||'').toLowerCase();
+    const typing= tag==='input'||tag==='textarea'||tag==='select';
+    if(e.key==='Escape'){
+      if($('#modalOverlay').classList.contains('open')) closeModal();
+      else if($('#scOverlay').classList.contains('open')) $('#scOverlay').classList.remove('open');
+      return;
+    }
+    if($('#modalOverlay').classList.contains('open')){
+      if(e.key==='ArrowLeft') modalNav(-1);
+      if(e.key==='ArrowRight') modalNav(1);
+      return;
+    }
+    if(typing) return;
+    if(e.key==='/'){ e.preventDefault();
+      if(AppState.activeSection!=='explorer') setSection('explorer');
+      setTimeout(()=>{ const k=$('#kwInput'); if(k) k.focus(); },60);
+      return;
+    }
+    if(/^[1-7]$/.test(e.key)){ setSection(SECTIONS[parseInt(e.key,10)-1]); }
+  });
+}
+
+/* ============================================================
+   19. SAMPLE DATA (hardcoded demo — 3 records, no real URLs)
+   ============================================================ */
+const SAMPLE_DATA = [
+  {
+    adId:'demo-0001', adLibraryUrl:'https://example.com/ad-library/detail/demo-0001',
+    advertiserName:'Acme Cloud ERP', advertiserUrl:'https://example.com/company/acme',
+    advertiserLogo:'', body:'Run smarter with AI-powered cloud ERP built for the mid-market. Cut manual work and unlock real-time insight across finance and supply chain.',
+    headline:'AI cloud ERP for growing businesses', format:'SINGLE_IMAGE', paidBy:'Acme Media EMEA',
+    ctas:['Learn more'], imageUrl:'', clickUrl:'https://example.com/acme/erp',
+    impressions:'10k-20k', availability:{start:'2026-06-01',end:'2026-06-30'},
+    targeting:{language:'English',location:'United Kingdom, Germany, France'},
+    impressionsPerCountry:[{country:'United Kingdom',impressions:'42%'},{country:'Germany',impressions:'31%'},{country:'France',impressions:'27%'}]
+  },
+  {
+    adId:'demo-0002', adLibraryUrl:'https://example.com/ad-library/detail/demo-0002',
+    advertiserName:'Northwind Spend', advertiserUrl:'https://example.com/company/northwind',
+    advertiserLogo:'', body:'See how leading finance teams automate expense and invoice workflows to drive efficiency and savings. Download the 2026 benchmark report.',
+    headline:'The 2026 Spend Automation Benchmark', format:'DOCUMENT', paidBy:'Northwind Inc',
+    ctas:['Download'], documentUrl:'https://example.com/northwind/report.pdf', clickUrl:'https://example.com/northwind/report',
+    impressions:'1k-5k', availability:{start:'2026-05-15',end:'2026-07-15'},
+    targeting:{language:'English',location:'United States, Netherlands'},
+    impressionsPerCountry:[{country:'United States',impressions:'68%'},{country:'Netherlands',impressions:'22%'},{country:'United Kingdom',impressions:'<1%'}]
+  },
+  {
+    adId:'demo-0003', adLibraryUrl:'https://example.com/ad-library/detail/demo-0003',
+    advertiserName:'Helios Talent', advertiserUrl:'https://example.com/company/helios',
+    advertiserLogo:'', body:'Hear our Chief People Officer on building an agentic HR operating model for the digital transformation era.',
+    headline:'Reimagining HR with intelligent automation', format:'CAROUSEL', paidBy:'Helios Talent Ltd',
+    ctas:['Register','Learn more'],
+    slides:[{headline:'The agentic HR shift',imageUrl:''},{headline:'From process to platform',imageUrl:''},{headline:'Productivity at scale',imageUrl:''}],
+    clickUrl:'https://example.com/helios/webinar',
+    impressions:'5k-10k', availability:{start:'2026-06-10',end:'2026-06-24'},
+    targeting:{language:'English',location:'United Kingdom, United States, Germany'},
+    impressionsPerCountry:[{country:'United Kingdom',impressions:'40%'},{country:'United States',impressions:'35%'},{country:'Germany',impressions:'25%'}],
+    thoughtLeaderMemberName:'Jordan Avery', thoughtLeaderJobTitle:'Chief People Officer, Helios Talent',
+    thoughtLeaderMemberUrl:'https://example.com/in/jordan-avery', thoughtLeaderMemberImageUrl:''
+  }
+];
+
+/* ============================================================
+   20. INIT
+   ============================================================ */
+function init(){
+  initEvents();
+  updateHeader();
+  applyFilters();
+  renderActiveSection();
+}
+init();
+</script>
+</body>
+</html>
