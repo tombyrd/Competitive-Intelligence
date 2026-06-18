@@ -84,19 +84,53 @@ Works on phones and in the Claude desktop app browser alike — it's just a webs
 - **Slots:** six 2-hour blocks (07:00–19:00), editable in `config.js` (`EV_SLOTS`).
 - **Availability:** the form greys out slots already **approved** for that bay+date, plus
   slots that have already passed today. A final check on submit avoids race conditions.
+  The form reads availability from a no-PII view (`public_availability`) — never the raw
+  bookings table — so staff names and phone numbers are never sent to the public page.
 - **Admin:** filter by status, sort by date or submission time, approve/reject. Approved
   bookings lock; rejected ones can be re-approved. The panel auto-refreshes every 30s.
 
 ---
 
-## Security note (please read)
+## v2 security — magic-link admin sign-in
 
-This is a **v1 internal tool** with deliberately light security, matching the spec:
+v2 closes the v1 exposures: the admin passcode is gone, and the database no longer lets
+the public read booking rows (names/phone numbers). Facilities staff now sign in with a
+one-time email link, and only **allow-listed** addresses get access.
 
-- The `anon` key is **meant** to be public in the page — that's normal for Supabase.
-- The admin passcode is checked **in the browser**, so a determined person viewing the
-  page source could read it and the RLS policies allow anyone to write. That's acceptable
-  for a low-stakes internal booking tool, **but do not store anything sensitive here.**
-- If you later want real protection, the upgrade path is Supabase Auth (magic-link email
-  restricted to `@ifs.com`) + RLS policies that only let authenticated facilities staff
-  update rows. Happy to add that as v2.
+**One-time setup (~10 min):**
+
+1. **Run the SQL.** In Supabase → **SQL Editor**, paste and run [`v2-security.sql`](v2-security.sql).
+   It drops the open v1 policies, adds an `admins` allow-list table, locks reads/updates to
+   admins, and creates the `public_availability` view.
+
+2. **Add the admin emails.** Either uncomment the `insert into admins …` block at the bottom
+   of `v2-security.sql` and run it, or run it separately, e.g.:
+   ```sql
+   insert into admins (email) values ('jane.doe@ifs.com') on conflict do nothing;
+   ```
+
+3. **Enable email auth + allow the redirect URL.** In Supabase:
+   - **Authentication → Providers → Email** — make sure it's **enabled** (it is by default).
+   - **Authentication → URL Configuration** — set **Site URL** to
+     `https://tombyrd.github.io/Competitive-Intelligence/ev-booking/admin.html` and add the
+     same URL under **Redirect URLs**. (Add `http://localhost:8231/ev-booking/admin.html`
+     too if you want to test sign-in locally.) **The link won't work until this is set.**
+
+That's it. Open `admin.html`, enter an allow-listed email, click the link in the email, and
+you're in. Anyone not on the list is signed straight back out with an "isn't authorised"
+message.
+
+**How the protection works**
+- **Submit** (insert) is open to everyone, but RLS only permits `status = 'pending'` — no one
+  can insert a pre-approved booking to skip review.
+- **Read / approve / reject** require a signed-in session whose email is in `admins` (enforced
+  in the database via Row Level Security, not just in the browser — so it can't be bypassed by
+  editing the page).
+- The public form only ever sees `public_availability` (bay/date/slot of approved bookings).
+
+**Notes**
+- The `anon` key is still public in the page — that's normal and safe; on its own it now grants
+  only "submit a pending booking" and "read approved slot times," nothing more.
+- Supabase's built-in email is rate-limited to a few sends per hour, which is plenty for a
+  handful of facilities admins. If you ever need more, add custom SMTP in Authentication settings.
+- To add/remove an admin later, just `insert`/`delete` rows in the `admins` table.

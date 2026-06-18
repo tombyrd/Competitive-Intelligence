@@ -210,8 +210,9 @@ footer{text-align:center;font-size:.7rem;color:var(--muted);margin-top:26px}
     if (sb){
       slotStatus.textContent = "Checking availability…"; slotStatus.className="slot-status loading";
       try{
-        const { data, error } = await sb.from("bookings").select("slot")
-          .eq("bay", Number(bay)).eq("date", date).eq("status","approved");
+        // public_availability is a no-PII view: only bay/date/slot of approved bookings
+        const { data, error } = await sb.from("public_availability").select("slot")
+          .eq("bay", Number(bay)).eq("date", date);
         if (error) throw error;
         approved = (data||[]).map(r=>r.slot);
       }catch(e){
@@ -272,8 +273,8 @@ footer{text-align:center;font-size:.7rem;color:var(--muted);margin-top:26px}
     submitBtn.disabled = true; submitBtn.textContent = "Submitting…";
     try{
       // Re-check the slot wasn't approved for someone else while the form was open
-      const { data: clash } = await sb.from("bookings").select("id")
-        .eq("bay", Number(bay)).eq("date", date).eq("slot", slot).eq("status","approved");
+      const { data: clash } = await sb.from("public_availability").select("slot")
+        .eq("bay", Number(bay)).eq("date", date).eq("slot", slot);
       if (clash && clash.length){
         showError("Sorry, that slot was just booked. Please pick another.");
         await refreshSlots();

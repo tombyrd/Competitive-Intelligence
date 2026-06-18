@@ -32,6 +32,7 @@ a{color:inherit}
 .gate button{width:100%;padding:12px;font-weight:700;color:#fff;background:var(--text);
   border:none;border-radius:10px;cursor:pointer;font-size:1rem}
 .gate .err{color:var(--red);font-size:.82rem;min-height:1.2em;margin-bottom:6px}
+.gate .msg{color:var(--green-d);font-size:.82rem;margin-top:10px;line-height:1.4}
 .gate .back{display:inline-block;margin-top:14px;font-size:.8rem;color:var(--muted)}
 
 /* ── App ── */
@@ -104,12 +105,13 @@ td.name{font-weight:600}
   <div class="box">
     <div class="logo">⚡</div>
     <h1>Facilities Admin</h1>
-    <p>Enter the facilities passcode to manage charging bay bookings.</p>
+    <p>Sign in with your IFS email. We'll send you a one-time link — only approved facilities staff can get in.</p>
     <form id="gateForm">
       <div id="gateErr" class="err"></div>
-      <input type="password" id="passcode" placeholder="Passcode" autocomplete="current-password" autofocus>
-      <button type="submit">Unlock</button>
+      <input type="email" id="email" placeholder="you@ifs.com" autocomplete="email" autofocus>
+      <button type="submit" id="gateBtn">Email me a sign-in link</button>
     </form>
+    <div id="gateMsg" class="msg"></div>
     <a class="back" href="index.html">← Back to booking form</a>
   </div>
 </div>
@@ -180,30 +182,69 @@ td.name{font-weight:600}
   let sort = "soonest";
   let pollTimer = null;
 
-  // ── Auth gate (light-touch, client-side only) ──
-  const SESSION_KEY = "ev_admin_ok";
-  function unlocked(){ return sessionStorage.getItem(SESSION_KEY)==="1"; }
+  // ── Auth: Supabase magic-link, gated by the `admins` allowlist ──
+  let appShown = false;
   function showApp(){
+    if (appShown) return;
+    appShown = true;
     $("gate").style.display="none"; $("app").style.display="block";
     load();
     pollTimer = setInterval(load, 30000); // auto-refresh every 30s
   }
-  $("gateForm").addEventListener("submit",(e)=>{
+
+  // After a session exists, confirm the email is on the facilities allowlist.
+  // RLS lets a signed-in user read only their own row in `admins`, so a hit = authorised.
+  async function afterAuth(session){
+    if (!session || !sb) return;
+    const email = ((session.user && session.user.email) || "").toLowerCase();
+    const { data, error } = await sb.from("admins").select("email").eq("email", email).maybeSingle();
+    if (error || !data){
+      $("gateMsg").textContent = "";
+      $("gateErr").textContent = email + " isn't authorised for admin access. Contact IT if this is wrong.";
+      await sb.auth.signOut();
+      return;
+    }
+    showApp();
+  }
+
+  if (!sb){
+    $("gateErr").textContent = "Not configured — add your Supabase keys in config.js (see SETUP.md).";
+    const gb = $("gateBtn"); if (gb) gb.disabled = true;
+  } else {
+    // Existing session, plus the redirect back from the email link (handled by supabase-js)
+    sb.auth.getSession().then(({ data }) => { if (data.session) afterAuth(data.session); });
+    sb.auth.onAuthStateChange((event, session) => {
+      if (event === "SIGNED_IN" && session) afterAuth(session);
+    });
+  }
+
+  $("gateForm").addEventListener("submit", async (e)=>{
     e.preventDefault();
-    const v = $("passcode").value;
-    if (v === (cfg.ADMIN_PASSCODE||"")){
-      sessionStorage.setItem(SESSION_KEY,"1"); showApp();
-    } else {
-      $("gateErr").textContent = "Incorrect passcode.";
-      $("passcode").value="";
+    $("gateErr").textContent = ""; $("gateMsg").textContent = "";
+    if (!sb) return;
+    const email = $("email").value.trim().toLowerCase();
+    if (!email){ $("gateErr").textContent = "Enter your email address."; return; }
+    const btn = $("gateBtn"); btn.disabled = true; btn.textContent = "Sending…";
+    try{
+      const { error } = await sb.auth.signInWithOtp({
+        email,
+        options: { emailRedirectTo: location.origin + location.pathname }
+      });
+      if (error) throw error;
+      $("gateMsg").textContent = "Link sent — check " + email + " and click it to sign in.";
+    }catch(err){
+      $("gateErr").textContent = "Couldn't send the sign-in link. Please try again.";
+      console.error(err);
+    }finally{
+      btn.disabled = false; btn.textContent = "Email me a sign-in link";
     }
   });
-  $("logoutBtn").addEventListener("click",()=>{
-    sessionStorage.removeItem(SESSION_KEY);
+
+  $("logoutBtn").addEventListener("click", async ()=>{
     if (pollTimer) clearInterval(pollTimer);
+    if (sb) await sb.auth.signOut();
     location.reload();
   });
-  if (unlocked()) showApp();
 
   // ── Data ──
   function banner(msg){ const b=$("banner"); if(!msg){b.classList.remove("show");return;} b.textContent=msg; b.classList.add("show"); }
