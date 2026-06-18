@@ -43,7 +43,7 @@ add:
 |------|-------|
 | `GMAIL_USER` | the sending Gmail address, e.g. `ifs.ev.staines@gmail.com` |
 | `GMAIL_APP_PASSWORD` | the 16-char App Password, **no spaces** |
-| `EV_ADMIN_URL` | `https://tombyrd.github.io/Competitive-Intelligence/ev-booking/admin.html` (optional) |
+| `EV_ADMIN_URL` | `https://dapper-florentine-03e761.netlify.app/ev-booking/admin.html` |
 
 (`SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are provided automatically.)
 

@@ -13,7 +13,7 @@ const GMAIL_USER = Deno.env.get("GMAIL_USER")!;
 const GMAIL_APP_PASSWORD = Deno.env.get("GMAIL_APP_PASSWORD")!;
 const FROM = `IFS EV Charging <${GMAIL_USER}>`;
 const ADMIN_URL = Deno.env.get("EV_ADMIN_URL")
-  ?? "https://tombyrd.github.io/Competitive-Intelligence/ev-booking/admin.html";
+  ?? "https://dapper-florentine-03e761.netlify.app/ev-booking/admin.html";
 
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL")!,
