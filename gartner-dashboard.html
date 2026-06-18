@@ -1,0 +1,1231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gartner Peer Insights — CI Dashboard — NxB</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+
+<style>
+:root{
+  --black:#000000; --bg:#050505; --surface:#0a0a0a; --surface2:#111111;
+  --border:#1a1a1a; --border2:#222222; --white:#ffffff; --grey:#777777;
+  --light:#bbbbbb; --green:#00C67A; --amber:#F59E0B; --red:#EF4444;
+  --blue:#60A5FA; --purple:#A78BFA; --teal:#2DD4BF;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  background:var(--bg); color:var(--light);
+  font-family:'Inter',system-ui,sans-serif; font-size:0.82rem; font-weight:400;
+  -webkit-font-smoothing:antialiased; line-height:1.5;
+}
+a{color:var(--blue);text-decoration:none}
+a:hover{text-decoration:underline}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:6px}
+::-webkit-scrollbar-thumb:hover{background:#333}
+
+.mono{font-family:'JetBrains Mono',monospace}
+.label{font-family:'JetBrains Mono',monospace;font-size:0.55rem;text-transform:uppercase;letter-spacing:0.15em;color:var(--grey)}
+
+/* ---------- Header ---------- */
+header{
+  position:fixed;top:0;left:0;right:0;height:58px;z-index:100;
+  display:flex;align-items:center;gap:18px;padding:0 18px;
+  background:var(--black);border-bottom:1px solid var(--border2);
+}
+.brand{display:flex;align-items:center;gap:10px;white-space:nowrap}
+.brand .nxb{font-family:'JetBrains Mono',monospace;font-weight:500;color:var(--purple);font-size:1.05rem;letter-spacing:-0.02em}
+.brand .ttl{color:var(--white);font-weight:600;font-size:0.95rem;letter-spacing:-0.02em}
+.demo-badge{
+  display:none;font-family:'JetBrains Mono',monospace;font-size:0.55rem;letter-spacing:0.15em;
+  text-transform:uppercase;color:var(--amber);border:1px solid var(--amber);
+  padding:3px 7px;border-radius:5px;
+}
+.demo-badge.on{display:inline-block}
+.dataset-info{color:var(--grey);font-size:0.72rem;font-family:'JetBrains Mono',monospace;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hdr-actions{display:flex;align-items:center;gap:8px}
+.btn{
+  font-family:'Inter',sans-serif;font-size:0.75rem;font-weight:500;cursor:pointer;
+  background:var(--surface2);color:var(--light);border:1px solid var(--border2);
+  border-radius:6px;padding:7px 12px;transition:all .15s;white-space:nowrap;
+}
+.btn:hover{border-color:#333;color:var(--white)}
+.btn.primary{background:var(--purple);color:var(--black);border-color:var(--purple);font-weight:600}
+.btn.primary:hover{background:#b9a4fb}
+.btn.ghost{background:transparent}
+.btn.danger:hover{border-color:var(--red);color:var(--red)}
+.btn.sm{padding:5px 9px;font-size:0.7rem}
+.icon-btn{
+  width:32px;height:32px;display:flex;align-items:center;justify-content:center;
+  border-radius:6px;background:var(--surface2);border:1px solid var(--border2);
+  color:var(--light);cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:0.85rem;text-decoration:none;
+}
+.icon-btn:hover{color:var(--white);border-color:#333}
+.hamburger{display:none}
+
+/* ---------- Layout ---------- */
+.shell{display:flex;padding-top:58px;min-height:100vh}
+nav.sidebar{
+  position:fixed;top:58px;left:0;bottom:0;width:220px;z-index:90;
+  background:var(--surface);border-right:1px solid var(--border2);
+  padding:14px 0;overflow-y:auto;transition:transform .2s;
+}
+nav.sidebar .navgroup-label{padding:8px 18px 6px}
+.navlink{
+  display:flex;align-items:center;gap:10px;padding:9px 18px;cursor:pointer;
+  color:var(--light);font-size:0.82rem;border-left:2px solid transparent;transition:all .12s;
+}
+.navlink:hover{background:var(--surface2);color:var(--white)}
+.navlink.active{background:var(--surface2);color:var(--white);border-left-color:var(--purple)}
+.navlink .num{font-family:'JetBrains Mono',monospace;font-size:0.6rem;color:var(--grey);width:14px}
+.navlink.active .num{color:var(--purple)}
+.nav-sep{height:1px;background:var(--border2);margin:12px 18px}
+.nav-action{padding:0 14px;margin-bottom:8px}
+.nav-action .btn{width:100%;text-align:left}
+
+main{margin-left:220px;flex:1;min-width:0}
+.content{max-width:1400px;margin:0 auto;padding:34px 40px 90px}
+section.panel{display:none;scroll-margin-top:120px}
+section.panel.active{display:block}
+
+.sec-head{margin-bottom:22px}
+.sec-head h2{color:var(--white);font-size:1.5rem;font-weight:700;letter-spacing:-0.02em}
+.sec-head h2 em{color:var(--purple);font-style:normal}
+.sec-head p{color:var(--grey);font-size:0.8rem;margin-top:4px;max-width:760px}
+
+/* ---------- Filter bar ---------- */
+.filterbar{
+  position:sticky;top:58px;z-index:80;background:var(--bg);
+  border-bottom:1px solid var(--border2);padding:12px 40px;
+  margin:0 -40px 26px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;
+}
+.filter-item{position:relative}
+.filter-item > .fbtn{
+  display:flex;align-items:center;gap:7px;background:var(--surface2);
+  border:1px solid var(--border2);border-radius:7px;padding:6px 11px;cursor:pointer;
+  color:var(--light);font-size:0.74rem;white-space:nowrap;
+}
+.filter-item > .fbtn:hover{border-color:#333;color:var(--white)}
+.filter-item > .fbtn .cnt{font-family:'JetBrains Mono',monospace;font-size:0.6rem;color:var(--purple)}
+.dropdown{
+  display:none;position:absolute;top:calc(100% + 6px);left:0;z-index:200;
+  background:var(--surface);border:1px solid var(--border2);border-radius:9px;
+  padding:10px;min-width:230px;max-height:340px;overflow-y:auto;
+  box-shadow:0 14px 40px rgba(0,0,0,.6);
+}
+.dropdown.open{display:block}
+.dropdown .search{width:100%;margin-bottom:8px;background:var(--bg);border:1px solid var(--border2);border-radius:6px;padding:6px 8px;color:var(--white);font-size:0.74rem}
+.opt{display:flex;align-items:center;gap:8px;padding:5px 6px;border-radius:5px;cursor:pointer;font-size:0.76rem}
+.opt:hover{background:var(--surface2)}
+.opt input{accent-color:var(--purple)}
+.chiprow{display:flex;flex-wrap:wrap;gap:6px}
+.chip{
+  font-family:'JetBrains Mono',monospace;font-size:0.62rem;padding:5px 9px;border-radius:20px;
+  border:1px solid var(--border2);cursor:pointer;color:var(--grey);background:var(--surface2);user-select:none;
+}
+.chip.on{background:var(--purple);color:var(--black);border-color:var(--purple);font-weight:500}
+.kw-input{background:var(--surface2);border:1px solid var(--border2);border-radius:7px;padding:6px 11px;color:var(--white);font-size:0.74rem;width:200px}
+.kw-input::placeholder{color:var(--grey)}
+.filter-meta{margin-left:auto;display:flex;align-items:center;gap:10px}
+.active-badge{font-family:'JetBrains Mono',monospace;font-size:0.62rem;color:var(--purple);background:var(--surface2);border:1px solid var(--border2);border-radius:20px;padding:4px 10px}
+.range-wrap{display:flex;align-items:center;gap:8px;font-size:0.72rem;color:var(--grey)}
+.range-wrap input[type=range]{accent-color:var(--purple);width:120px}
+.seg{display:flex;border:1px solid var(--border2);border-radius:7px;overflow:hidden}
+.seg button{background:var(--surface2);border:none;color:var(--grey);padding:6px 10px;font-size:0.7rem;cursor:pointer;font-family:'Inter',sans-serif}
+.seg button.on{background:var(--purple);color:var(--black);font-weight:500}
+
+/* ---------- Cards / grids ---------- */
+.kpi-row{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:24px}
+.stat-card{background:var(--surface);border:1px solid var(--border2);border-radius:11px;padding:16px 18px}
+.stat-label{font-family:'JetBrains Mono',monospace;font-size:0.55rem;text-transform:uppercase;letter-spacing:0.13em;color:var(--grey)}
+.stat-value{font-size:1.6rem;font-weight:700;color:var(--white);margin-top:8px;line-height:1}
+.stat-sub{font-size:0.68rem;color:var(--grey);margin-top:6px}
+
+.grid{display:grid;gap:18px}
+.grid-2{grid-template-columns:repeat(2,1fr)}
+.grid-3{grid-template-columns:repeat(3,1fr)}
+.card{background:var(--surface);border:1px solid var(--border2);border-radius:11px;padding:18px}
+.card h3{color:var(--white);font-size:0.92rem;font-weight:600;margin-bottom:4px}
+.card .sub{color:var(--grey);font-size:0.7rem;margin-bottom:12px}
+.chart{width:100%;height:300px}
+.chart.tall{height:380px}
+.chart.short{height:230px}
+
+.theme-card{border-left:3px solid var(--border2)}
+.theme-card .tc-count{font-size:1.5rem;font-weight:700;color:var(--white)}
+.theme-card .tc-quote{font-size:0.74rem;color:var(--light);font-style:italic;margin-top:8px;border-left:2px solid var(--border2);padding-left:9px;line-height:1.45}
+
+/* ---------- Tags / pills ---------- */
+.tag{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:0.55rem;letter-spacing:0.04em;padding:3px 7px;border-radius:5px;border:1px solid;white-space:nowrap;margin:2px 3px 2px 0}
+.tag-red{color:var(--red);border-color:rgba(239,68,68,.4);background:rgba(239,68,68,.08)}
+.tag-amber{color:var(--amber);border-color:rgba(245,158,11,.4);background:rgba(245,158,11,.08)}
+.tag-blue{color:var(--blue);border-color:rgba(96,165,250,.4);background:rgba(96,165,250,.08)}
+.tag-purple{color:var(--purple);border-color:rgba(167,139,250,.4);background:rgba(167,139,250,.08)}
+.tag-green{color:var(--green);border-color:rgba(0,198,122,.4);background:rgba(0,198,122,.08)}
+.tag-grey{color:var(--grey);border-color:var(--border2);background:var(--surface2)}
+.stars{font-size:0.92rem;letter-spacing:1px}
+.score-badge{font-family:'JetBrains Mono',monospace;font-size:0.62rem;font-weight:500;padding:3px 8px;border-radius:6px;white-space:nowrap}
+.score-hot{background:rgba(239,68,68,.16);color:var(--red);border:1px solid rgba(239,68,68,.4)}
+.score-warm{background:rgba(245,158,11,.14);color:var(--amber);border:1px solid rgba(245,158,11,.35)}
+.score-cool{background:var(--surface2);color:var(--grey);border:1px solid var(--border2)}
+.lang-badge{font-family:'JetBrains Mono',monospace;font-size:0.52rem;padding:2px 5px;border-radius:4px;background:var(--surface2);border:1px solid var(--border2);color:var(--grey)}
+
+/* ---------- Callouts ---------- */
+.callout{border-radius:10px;padding:13px 16px;margin:16px 0;font-size:0.8rem;border:1px solid;line-height:1.5}
+.callout-info{background:rgba(96,165,250,.07);border-color:rgba(96,165,250,.3);color:var(--light)}
+.callout-warn{background:rgba(245,158,11,.07);border-color:rgba(245,158,11,.3);color:var(--light)}
+.callout-danger{background:rgba(239,68,68,.07);border-color:rgba(239,68,68,.3);color:var(--light)}
+.callout-success{background:rgba(0,198,122,.07);border-color:rgba(0,198,122,.3);color:var(--light)}
+.callout strong{color:var(--white)}
+
+/* ---------- Table ---------- */
+.table-controls{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+table.rtable{width:100%;border-collapse:collapse;font-size:0.76rem}
+table.rtable th{text-align:left;padding:9px 10px;border-bottom:1px solid var(--border2);color:var(--grey);font-family:'JetBrains Mono',monospace;font-size:0.58rem;text-transform:uppercase;letter-spacing:0.08em;cursor:pointer;white-space:nowrap;user-select:none}
+table.rtable th:hover{color:var(--white)}
+table.rtable td{padding:9px 10px;border-bottom:1px solid var(--border);vertical-align:top}
+table.rtable tr.rrow{cursor:pointer}
+table.rtable tr.rrow:hover{background:var(--surface2)}
+.exp-row td{background:var(--bg);padding:16px 18px}
+.exp-body{font-size:0.8rem;color:var(--light);line-height:1.6;max-width:900px}
+.exp-actions{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.help-job{max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:inline-block}
+.pager{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:16px}
+.pager button{background:var(--surface2);border:1px solid var(--border2);color:var(--light);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:0.72rem}
+.pager button:disabled{opacity:.4;cursor:default}
+.pager .pg-info{font-family:'JetBrains Mono',monospace;font-size:0.7rem;color:var(--grey)}
+
+/* ---------- Quote cards ---------- */
+.quote-grid{column-count:3;column-gap:18px}
+@media(max-width:1100px){.quote-grid{column-count:2}}
+.qcard{break-inside:avoid;background:var(--surface);border:1px solid var(--border2);border-radius:11px;padding:16px;margin-bottom:18px}
+.qcard .qhead{font-size:0.92rem;color:var(--white);font-weight:600;margin:8px 0 6px;line-height:1.35}
+.qcard .qbody{font-size:0.76rem;color:var(--light);line-height:1.55}
+.qcard .qmeta{font-size:0.68rem;color:var(--grey);margin-top:10px;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.qcard .qactions{display:flex;gap:6px;margin-top:12px;flex-wrap:wrap}
+.readmore{color:var(--purple);cursor:pointer;font-size:0.72rem}
+
+/* ---------- Theme config ---------- */
+.theme-config{margin-bottom:20px}
+.theme-config details{background:var(--surface);border:1px solid var(--border2);border-radius:11px;padding:4px 18px}
+.theme-config summary{cursor:pointer;color:var(--white);font-weight:600;padding:12px 0;font-size:0.9rem}
+.tcfg-row{display:grid;grid-template-columns:160px 1fr 90px;gap:12px;align-items:start;padding:10px 0;border-top:1px solid var(--border)}
+.tcfg-row textarea{width:100%;min-height:48px;background:var(--bg);border:1px solid var(--border2);border-radius:6px;color:var(--light);font-size:0.7rem;font-family:'JetBrains Mono',monospace;padding:7px;resize:vertical}
+.tcfg-row .tname{font-weight:600;color:var(--white);font-size:0.78rem}
+
+/* ---------- Modal ---------- */
+.modal-overlay{display:none;position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.85);align-items:flex-start;justify-content:center;overflow-y:auto;padding:60px 20px}
+.modal-overlay.open{display:flex}
+.modal{background:var(--bg);border:1px solid var(--border2);border-radius:14px;max-width:680px;width:100%;padding:26px}
+.modal h3{color:var(--white);font-size:1.1rem;margin-bottom:4px}
+.modal .mclose{float:right;cursor:pointer;color:var(--grey);font-size:1.3rem;line-height:1}
+.modal .mbody{font-size:0.84rem;color:var(--light);line-height:1.6;margin:14px 0;white-space:pre-wrap}
+.modal .mmeta{display:flex;flex-wrap:wrap;gap:8px;font-size:0.72rem;color:var(--grey);margin-bottom:8px}
+
+/* ---------- Drawer ---------- */
+.drawer{position:fixed;top:58px;right:0;bottom:0;width:340px;z-index:300;background:var(--surface);border-left:1px solid var(--border2);transform:translateX(100%);transition:transform .22s;display:flex;flex-direction:column}
+.drawer.open{transform:translateX(0)}
+.drawer .dh{padding:16px 18px;border-bottom:1px solid var(--border2);display:flex;align-items:center;justify-content:between;gap:10px}
+.drawer .dh h3{color:var(--white);font-size:0.95rem;flex:1}
+.drawer .dbody{flex:1;overflow-y:auto;padding:14px 18px}
+.drawer .df{padding:14px 18px;border-top:1px solid var(--border2);display:flex;gap:8px;flex-wrap:wrap}
+.flagq{border:1px solid var(--border2);border-radius:8px;padding:10px;margin-bottom:10px;font-size:0.74rem}
+.flagq .fqh{color:var(--white);font-weight:600;margin-bottom:4px}
+.flagq .rm{color:var(--red);cursor:pointer;font-size:0.66rem;float:right}
+
+/* ---------- Misc ---------- */
+.empty{text-align:center;padding:60px 20px;color:var(--grey)}
+.empty button{margin-top:14px}
+.spotlight-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
+.relevance-tag{cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:0.55rem;padding:3px 7px;border-radius:5px;border:1px solid var(--border2)}
+.rel-High{background:rgba(239,68,68,.14);color:var(--red);border-color:rgba(239,68,68,.4)}
+.rel-Medium{background:rgba(245,158,11,.12);color:var(--amber);border-color:rgba(245,158,11,.35)}
+.rel-Low{background:var(--surface2);color:var(--grey)}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--purple);color:var(--black);font-weight:600;font-size:0.78rem;padding:10px 18px;border-radius:8px;z-index:900;opacity:0;transition:opacity .2s;pointer-events:none}
+.toast.show{opacity:1}
+.loading{position:fixed;inset:0;z-index:999;background:var(--black);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px}
+.loading .lw{font-family:'JetBrains Mono',monospace;color:var(--purple);font-size:2rem;letter-spacing:-0.02em}
+.loading .lt{color:var(--grey);font-size:0.8rem}
+.loading.hide{display:none}
+.exp-table{width:100%;border-collapse:collapse;font-size:0.74rem;margin:10px 0}
+.exp-table td,.exp-table th{padding:7px 10px;border-bottom:1px solid var(--border);text-align:left}
+.exp-table th{color:var(--grey);font-family:'JetBrains Mono',monospace;font-size:0.56rem;text-transform:uppercase}
+.back-home{color:var(--grey);font-size:0.72rem}
+
+footer.pagefoot{position:fixed;bottom:0;left:220px;right:0;z-index:70;background:var(--black);border-top:1px solid var(--border2);padding:7px 18px;font-family:'JetBrains Mono',monospace;font-size:0.6rem;color:var(--grey);letter-spacing:0.05em}
+
+@media(max-width:768px){
+  nav.sidebar{transform:translateX(-100%)}
+  nav.sidebar.open{transform:translateX(0)}
+  main{margin-left:0}
+  .hamburger{display:flex}
+  .kpi-row{grid-template-columns:repeat(2,1fr)}
+  .grid-2,.grid-3{grid-template-columns:1fr}
+  .quote-grid{column-count:1}
+  .content{padding:24px 18px 90px}
+  .filterbar{padding:12px 18px;margin:0 -18px 22px}
+  footer.pagefoot{left:0}
+}
+</style>
+</head>
+<body>
+
+<div class="loading" id="loading">
+  <div class="lw">NxB</div>
+  <div class="lt">Processing reviews…</div>
+</div>
+
+<header>
+  <button class="icon-btn hamburger" id="hamburgerBtn" title="Menu">≡</button>
+  <div class="brand">
+    <span class="nxb">NxB</span>
+    <span class="ttl">Gartner Peer Insights</span>
+    <span class="demo-badge" id="demoBadge">Embedded Data</span>
+  </div>
+  <div class="dataset-info" id="datasetInfo">No data loaded</div>
+  <div class="hdr-actions">
+    <a class="icon-btn" href="index.html" title="Back to dashboards">←</a>
+    <button class="btn primary sm" id="loadBtn">Upload Data</button>
+    <button class="btn ghost sm danger" id="clearBtn">Clear</button>
+    <input type="file" id="fileInput" accept=".json,application/json" multiple style="display:none">
+  </div>
+</header>
+
+<div class="shell">
+  <nav class="sidebar" id="sidebar">
+    <div class="navgroup-label label">Sections</div>
+    <div class="navlink active" data-section="overview"><span class="num">1</span>Overview</div>
+    <div class="navlink" data-section="explorer"><span class="num">2</span>Review Explorer</div>
+    <div class="navlink" data-section="themes"><span class="num">3</span>Theme Analysis</div>
+    <div class="navlink" data-section="industry"><span class="num">4</span>Industry Breakdown</div>
+    <div class="navlink" data-section="size"><span class="num">5</span>Company Size</div>
+    <div class="navlink" data-section="timeline"><span class="num">6</span>Timeline</div>
+    <div class="navlink" data-section="quotes"><span class="num">7</span>Quote Library</div>
+    <div class="navlink" data-section="export"><span class="num">8</span>Export</div>
+    <div class="nav-sep"></div>
+    <div class="nav-action"><button class="btn ghost sm" id="navUpload">Upload Data</button></div>
+    <div class="nav-action"><button class="btn ghost sm" id="navInfo">Dataset Info</button></div>
+    <div class="nav-action"><button class="btn ghost sm" id="navShortlist">Campaign Shortlist (<span id="flagCount">0</span>)</button></div>
+  </nav>
+
+  <main>
+    <!-- Filter bar -->
+    <div class="filterbar" id="filterbar"></div>
+
+    <div class="content">
+      <!-- OVERVIEW -->
+      <section class="panel active" id="overview">
+        <div class="sec-head">
+          <h2>Gartner Peer Insights — <em>SAP</em> Voice of Customer</h2>
+          <p>Negative-sentiment intelligence harvested from SAP Cloud ERP reviews. Surface pain themes, quantify displacement opportunity, and pull verbatim quotes for IFS marketing.</p>
+        </div>
+        <div class="kpi-row" id="kpiRow"></div>
+        <div class="grid grid-2" style="margin-bottom:18px">
+          <div class="card"><h3>Sentiment Gauge</h3><div class="sub">Share of reviews free of pain-point keywords</div><div class="chart short" id="gaugeChart"></div></div>
+          <div class="card"><h3>Rating Distribution</h3><div class="sub">Count of reviews by star rating</div><div class="chart short" id="ratingChart"></div></div>
+        </div>
+        <div class="sec-head" style="margin-top:8px"><h3 style="color:var(--white);font-size:1rem">Top Pain Themes</h3></div>
+        <div class="grid grid-3" id="themeSummaryCards" style="margin-bottom:18px"></div>
+        <div class="grid grid-2">
+          <div class="card"><h3>Top Displacement Signals</h3><div class="sub">Highest IFS opportunity scores</div><div id="topSignals"></div></div>
+          <div class="card"><h3>Recent Reviews</h3><div class="sub">Latest 5 by date</div><div id="recentTicker"></div></div>
+        </div>
+      </section>
+
+      <!-- REVIEW EXPLORER -->
+      <section class="panel" id="explorer">
+        <div class="sec-head"><h2>Review <em>Explorer</em></h2><p>Full review table with inline expansion, theme tags, and displacement scoring.</p></div>
+        <div class="table-controls">
+          <input class="kw-input" id="explorerSearch" placeholder="Search headline + body…" style="width:260px">
+          <div class="seg" id="explorerSort">
+            <button data-sort="date" class="on">Newest</button>
+            <button data-sort="score">Top Score</button>
+            <button data-sort="rating">Lowest Rated</button>
+          </div>
+          <label class="opt" style="font-size:0.72rem"><input type="checkbox" id="showAllRows"> Show all rows</label>
+          <button class="btn ghost sm" id="copySelBtn">Copy selected quotes</button>
+          <button class="btn ghost sm" id="csvSelBtn">Export selected CSV</button>
+        </div>
+        <div id="explorerTableWrap"></div>
+      </section>
+
+      <!-- THEME ANALYSIS -->
+      <section class="panel" id="themes">
+        <div class="sec-head"><h2>Theme <em>Analysis</em></h2><p>Client-side keyword classification of each review into pain themes. Edit keywords below to retune in real time.</p></div>
+        <div class="theme-config">
+          <details>
+            <summary>⚙ Theme keyword configuration</summary>
+            <div id="themeConfigBody"></div>
+            <div style="padding:12px 0"><button class="btn ghost sm" id="resetThemesBtn">Reset to defaults</button></div>
+          </details>
+        </div>
+        <div class="grid grid-2" style="margin-bottom:18px">
+          <div class="card"><h3>Theme Frequency</h3><div class="sub">Reviews matching each theme</div><div class="chart tall" id="themeFreqChart"></div></div>
+          <div class="card"><h3>Theme × Rating</h3><div class="sub">Rating mix within each theme</div><div class="chart tall" id="themeRatingChart"></div></div>
+        </div>
+        <div class="grid grid-2" style="margin-bottom:18px">
+          <div class="card"><h3>Theme Co-occurrence</h3><div class="sub">Reviews containing both themes</div><div class="chart tall" id="cooccChart"></div></div>
+          <div class="card"><h3>Theme × Industry</h3><div class="sub">Theme prevalence by industry</div><div class="chart tall" id="themeIndChart"></div></div>
+        </div>
+        <div class="card"><h3>Theme Trend Over Time</h3><div class="sub">Monthly review count per theme</div><div class="chart" id="themeTrendChart"></div></div>
+      </section>
+
+      <!-- INDUSTRY -->
+      <section class="panel" id="industry">
+        <div class="sec-head"><h2>Industry <em>Breakdown</em></h2><p>Click any industry row to filter the entire dashboard to that vertical.</p></div>
+        <div class="grid grid-2" style="margin-bottom:18px">
+          <div class="card"><h3>Reviews by Industry</h3><div class="sub">Click a segment to filter</div><div class="chart tall" id="industryDonut"></div></div>
+          <div class="card"><h3>Rating by Industry</h3><div class="sub">Top 8 industries by volume</div><div class="chart tall" id="industryRatingChart"></div></div>
+        </div>
+        <div class="card" style="margin-bottom:18px"><h3>Industry Comparison</h3><div class="sub">IFS relevance tags persist locally — click to cycle</div><div id="industryTableWrap"></div></div>
+        <div class="sec-head"><h3 style="color:var(--white);font-size:1rem">IFS Vertical Spotlight</h3></div>
+        <div class="spotlight-grid" id="spotlightGrid"></div>
+      </section>
+
+      <!-- COMPANY SIZE -->
+      <section class="panel" id="size">
+        <div class="sec-head"><h2>Company <em>Size</em></h2><p>50M–1B and 1B–10B USD bands are IFS's primary enterprise displacement targets.</p></div>
+        <div class="grid grid-2" style="margin-bottom:18px">
+          <div class="card"><h3>Reviews by Company Size</h3><div class="chart" id="sizeChart"></div></div>
+          <div class="card"><h3>Avg Rating by Size</h3><div class="chart" id="sizeRatingChart"></div></div>
+        </div>
+        <div class="card"><h3>Size × Theme Matrix</h3><div class="sub">% of reviews in each size band matching each theme</div><div id="sizeThemeWrap"></div></div>
+      </section>
+
+      <!-- TIMELINE -->
+      <section class="panel" id="timeline">
+        <div class="sec-head"><h2>Time<em>line</em></h2><p>Review volume and rolling sentiment over time, with SAP milestone markers.</p></div>
+        <div class="card" style="margin-bottom:18px"><h3>Review Volume Over Time</h3><div class="sub">Monthly bars, coloured by average rating</div><div class="chart" id="volumeChart"></div></div>
+        <div class="card"><h3>Rolling Sentiment Trend</h3><div class="sub">3-month rolling average rating with SAP events</div><div class="chart" id="rollingChart"></div></div>
+      </section>
+
+      <!-- QUOTE LIBRARY -->
+      <section class="panel" id="quotes">
+        <div class="sec-head"><h2>Quote <em>Library</em></h2><p>The primary marketing asset export. Flag the best verbatims for your campaign shortlist.</p></div>
+        <div class="table-controls">
+          <input class="kw-input" id="quoteSearch" placeholder="Live keyword filter…" style="width:240px">
+          <div class="seg" id="quoteSort">
+            <button data-sort="newest" class="on">Newest</button>
+            <button data-sort="oldest">Oldest</button>
+            <button data-sort="lowest">Lowest rated</button>
+            <button data-sort="score">Top score</button>
+          </div>
+          <label class="opt" style="font-size:0.72rem"><input type="checkbox" id="flaggedOnly"> Show flagged only</label>
+          <button class="btn ghost sm" id="openShortlist">Open shortlist</button>
+        </div>
+        <div class="quote-grid" id="quoteGrid"></div>
+      </section>
+
+      <!-- EXPORT -->
+      <section class="panel" id="export">
+        <div class="sec-head"><h2>Ex<em>port</em></h2><p>Download the current filtered set in marketing-ready formats.</p></div>
+        <div class="grid grid-2">
+          <div class="card"><h3>All filtered reviews → CSV</h3><div class="sub">Every field for the current filtered set</div><button class="btn primary sm" id="expReviewsCsv">Download CSV</button></div>
+          <div class="card"><h3>Theme analysis → CSV</h3><div class="sub">Theme × industry matrix</div><button class="btn primary sm" id="expThemeCsv">Download CSV</button></div>
+          <div class="card"><h3>Campaign quotes → TXT</h3><div class="sub">Flagged quotes, formatted for slides/Canva</div><button class="btn primary sm" id="expQuotesTxt">Download TXT</button></div>
+          <div class="card"><h3>Full report snapshot → JSON</h3><div class="sub">All filtered reviews + computed theme tags</div><button class="btn primary sm" id="expJson">Download JSON</button></div>
+        </div>
+        <div class="callout callout-info" style="margin-top:18px"><strong>PDF tip:</strong> Use your browser's Print → "Save as PDF" (landscape, background graphics on) to snapshot any section for sharing.</div>
+      </section>
+    </div>
+  </main>
+</div>
+
+<!-- Campaign shortlist drawer -->
+<div class="drawer" id="shortlistDrawer">
+  <div class="dh"><h3>Campaign Shortlist</h3><span class="mclose" id="closeDrawer" style="cursor:pointer;color:var(--grey)">×</span></div>
+  <div class="dbody" id="shortlistBody"></div>
+  <div class="df">
+    <button class="btn ghost sm" id="expShortlistCsv">Export CSV</button>
+    <button class="btn ghost sm" id="expShortlistTxt">Export TXT</button>
+    <button class="btn ghost sm danger" id="clearShortlist">Clear all</button>
+  </div>
+</div>
+
+<!-- Review modal -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal" id="modalCard"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<footer class="pagefoot" id="pagefoot"></footer>
+
+<script>
+/* ============================ EMBEDDED DATA ============================ */
+const EMBEDDED_DATA = [{"reviewId":6794412,"formattedReviewDate":"Jun 14, 2026","reviewSourceCode":3,"reviewIncentiveCode":2,"productNames":"SAP Cloud ERP","reviewRating":3,"industryCd":null,"industryName":"Energy and Utilities","companySizeCd":null,"companySize":"50M-1B USD","jobTitle":"Operations Associate","reviewSummary":"I have been using SAP in my business planning role for our heat pump business in the uk for around 8 months now, and speaking of it my relationship with the tool have gone through a number of phases. First few months were a bit painful, I literally thought in a world led by AI driven solutions why this. the interface is not intuitive and there is no shortcut to learning it, you just have to put long hours in. Bit it clicked in over time, especially working with people having years of experience in it, it becomes indispensable. The nature of my  job needs me to keep jumping back and forth between account level information: tracking what our installers and merchant partners are placing orders for, what has honestly been siting within the pipeline. where the gaps lie against our forecasts- and sap is one place where it all sits and lives in one place. I have heard from my teams, before we had proper visibility in the system, a lot of that reconciliation was happening in spreadsheets being emailed around, which was a nightmare for them to plan with long lead times and real constraints on the supply front. So to sum it up, it is not the prettiest of tools and I wouldnt call it enjoyable to use, but for some aspects of my role, i really struggle to function without it at this point.","reviewHeadline":"Reliable data and account visibility despite difficult interface and onboarding","upVotes":null,"functionCd":null,"function":null,"partnerReview":null,"tags":null,"productSeoNames":["sap-cloud-erp-1885459056"],"vendorSeoName":"sap","sortValue":null},{"reviewId":6814042,"formattedReviewDate":"May 25, 2026","reviewSourceCode":3,"reviewIncentiveCode":2,"productNames":"SAP Cloud ERP","reviewRating":3,"industryCd":null,"industryName":"Manufacturing","companySizeCd":null,"companySize":"1B-10B USD","jobTitle":"SALES CUSTOMER CARE HEAD OF SUPPLY CHAIN","reviewSummary":"L\u0027assistenza per l\u0027implementazione è completa e di livello ma abbastanza costosa rispetto alla concorrenza. SAP HANA risolve alcune criticità delle versioni precedenti ma per una serie di attività rimane ancora piuttosto complesso e poco user-friendly ","reviewHeadline":"Assistenza di alto livello ma costi sopra la media del settore","upVotes":null,"functionCd":null,"function":null,"partnerReview":null,"tags":null,"productSeoNames":["sap-cloud-erp-1885459056"],"vendorSeoName":"sap","sortValue":null},{"reviewId":6769302,"formattedReviewDate":"Apr 28, 2026","reviewSourceCode":3,"reviewIncentiveCode":2,"productNames":"SAP Cloud ERP","reviewRating":3,"industryCd":null,"industryName":"IT Services","companySizeCd":null,"companySize":"1B-10B USD","jobTitle":"Manager Of It Services","reviewSummary":"Umfangreiches Tool um viele der Standard-Geschäftsprozesse darin abzubilden. Es ist schon eine Umstellung, wenn man von on-prem zur SAP Cloud wechselt. Viele Dinge funktionieren ein wenig anders und die Anpassbarkeit ist nicht mehr ganz so ausgeprägt. Ein enormer Vorteil ist die gute Integrierbarkeit in die anderen SAP Produkte, ebenfalls ist durch den SaaS-Service die Wartbarkeit sehr einfach.","reviewHeadline":"Umstieg auf SAP Cloud vereinfacht Wartung, bringt jedoch Anpassungsgrenzen mit sich","upVotes":null,"functionCd":null,"function":null,"partnerReview":null,"tags":null,"productSeoNames":["sap-cloud-erp-1885459056"],"vendorSeoName":"sap","sortValue":null},{"reviewId":6738486,"formattedReviewDate":"Apr 15, 2026","reviewSourceCode":4,"reviewIncentiveCode":2,"productNames":"SAP Cloud ERP","reviewRating":2,"industryCd":null,"industryName":"Healthcare and Biotech","companySizeCd":null,"companySize":"50M-1B USD","jobTitle":"IT Manager","reviewSummary":"Initial Implementation was very difficult, it was not aligned for our use case at all, even after 24 months , we are still struggling to get our sales data. though it is better than before","reviewHeadline":"Challenges with Customization and Support Processes Impact Product Alignment and Use","upVotes":null,"functionCd":null,"function":null,"partnerReview":null,"tags":null,"productSeoNames":["sap-cloud-erp-1885459056"],"vendorSeoName":"sap","sortValue":null},{"reviewId":6665616,"formattedReviewDate":"Mar 3, 2026","reviewSourceCode":3,"reviewIncentiveCode":2,"productNames":"SAP Cloud ERP","reviewRating":3,"industryCd":null,"industryName":"Software","companySizeCd":null,"companySize":"1B-10B USD","jobTitle":"Associate","reviewSummary":"overall experience was good and what worked well while using SAP Could erp was that since it is a cloud hosted enterprise solution resource planning, it is used to manage finance , supply chain and procurement and other core processes integrated all in one place. \nit can be described as a powerful and comprehensive solution for large enterprise and demanding.\n","reviewHeadline":"SAP Cloud ERP Centralizes Business Functions But Requires Complex Configuration","upVotes":null,"functionCd":null,"function":null,"partnerReview":null,"tags":null,"productSeoNames":["sap-cloud-erp-1885459056"],"vendorSeoName":"sap","sortValue":null},{"reviewId":6656062,"formattedReviewDate":"Feb 27, 2026","reviewSourceCode":3,"reviewIncentiveCode":2,"productNames":"SAP Cloud ERP","reviewRating":3,"industryCd":null,"industryName":"Retail","companySizeCd":null,"companySize":"50M-1B USD","jobTitle":"Data Analyst","reviewSummary":"My experience has been mixed. It provides robust functionality, but the system can be complex to handle, and it requires a huge configuration.","reviewHeadline":"System Offers Strong Integration but Complexity and Configuration Pose Challenges","upVotes":null,"functionCd":null,"function":null,"partnerReview":null,"tags":null,"productSeoNames":["sap-cloud-erp-1885459056"],"vendorSeoName":"sap","sortValue":null},{"reviewId":6658364,"formattedReviewDate":"Feb 26, 2026","reviewSourceCode":3,"reviewIncentiveCode":2,"productNames":"SAP Cloud ERP","reviewRating":3,"industryCd":null,"industryName":"Manufacturing","companySizeCd":null,"companySize":"1B-10B USD","jobTitle":"DIRECTOR SALES AND SERVICE EXCELLENCE","reviewSummary":"Teilweise viel versprochen, dann aber doch deutlich weniger geliefert. Langer Weg um als \"Early Adopter\" zu einem stabilen Betrieb des Systems zu kommen.","reviewHeadline":"Schnelle globale Abdeckung im ERP Umfeld mit Grenzen in Performance und Funktionalität","upVotes":null,"functionCd":null,"function":null,"partnerReview":null,"tags":null,"productSeoNames":["sap-cloud-erp-1885459056"],"vendorSeoName":"sap","sortValue":null},{"reviewId":6553846,"formattedReviewDate":"Dec 15, 2025","reviewSourceCode":3,"reviewIncentiveCode":2,"productNames":"SAP Cloud ERP","reviewRating":3,"industryCd":null,"industryName":"Healthcare and Biotech","companySizeCd":null,"companySize":"50M-1B USD","jobTitle":"DIRECTOR OF AUDIT","reviewSummary":"Implementation sometimes did not go as expected to plan. The level of detail needed to perform transaction is more complex than it needs to be. Cash application was not working for at least 3 or 4 months post go-live. Had to extract data unless you know which reports to use and very specific report names, not to mention if you have even have the correct access. WHen you need service from SAP RISE team or other SAP support- it may take a while. ","reviewHeadline":"Complex Transactions and Delayed Support Hinder Overall Implementation Experience","upVotes":null,"functionCd":null,"function":null,"partnerReview":null,"tags":null,"productSeoNames":["sap-cloud-erp-1885459056"],"vendorSeoName":"sap","sortValue":null},{"reviewId":6443916,"formattedReviewDate":"Oct 20, 2025","reviewSourceCode":4,"reviewIncentiveCode":2,"productNames":"SAP Cloud ERP","reviewRating":3,"industryCd":null,"industryName":"Manufacturing","companySizeCd":null,"companySize":"50M-1B USD","jobTitle":"IT Manager","reviewSummary":"What has worked well\n- The availability of accelerators to quicken the implementation and release management process\n- Roadmap viewer where one is able to understand what\u0027s coming in order to prepare and identify new features and functionalities that will resolve current problems.\n- Community of users that share insights and resolutions to problems\n- Accessibility of expertise across the globe - one is not limited to their own region\nWhat hasn\u0027t worked well\n- Public cloud still has some fundamental functionalities/features that should be standard and which were standard in the on-prem version and the process from raising and implementation of these additional features is slow.","reviewHeadline":"Dependence on ECC Skills Highlights Need for Cloud ERP Partner Upskilling","upVotes":null,"functionCd":null,"function":null,"partnerReview":null,"tags":null,"productSeoNames":["sap-cloud-erp-1885459056"],"vendorSeoName":"sap","sortValue":null},{"reviewId":5448816,"formattedReviewDate":"Oct 20, 2025","reviewSourceCode":4,"reviewIncentiveCode":2,"productNames":"SAP Cloud ERP","reviewRating":3,"industryCd":null,"industryName":"Manufacturing","companySizeCd":null,"companySize":"50M-1B USD","jobTitle":"VP FINANCE","reviewSummary":"We have the Public Cloud version of SAP S4HANA and have had an overall favorable experience with the software and supplier.  Our primary contact through SAP RISE has been great to work with and constantly stays involved with our team and helps coordinate discussions.\n\nThe software itself is typical of large ERP systems.  It does some things really well, others it differs from how we\u0027d like to perform the action.  We knew this when selecting the Public Cloud program and the \"clean core\" expectation.  We specifically wanted a solution that wasn\u0027t customizable and worked out of the box.  ","reviewHeadline":"Public Cloud SAP S4HANA Offers Broad ERP Coverage With Some Limitations","upVotes":null,"functionCd":null,"function":null,"partnerReview":null,"tags":null,"productSeoNames":["sap-cloud-erp-1885459056"],"vendorSeoName":"sap","sortValue":null},{"reviewId":6438958,"formattedReviewDate":"Oct 16, 2025","reviewSourceCode":4,"reviewIncentiveCode":2,"productNames":"SAP Cloud ERP","reviewRating":3,"industryCd":null,"industryName":"Manufacturing","companySizeCd":null,"companySize":"\u003c50M USD","jobTitle":"Director of Project Management","reviewSummary":"The quality and knowledge of the SAP consultants were not consistent. We experienced anything bad to world-class","reviewHeadline":"Mixed Experiences With SAP: Interface Strengths And Consultant Knowledge Gaps","upVotes":null,"functionCd":null,"function":null,"partnerReview":null,"tags":null,"productSeoNames":["sap-cloud-erp-1885459056"],"vendorSeoName":"sap","sortValue":null},{"reviewId":6254070,"formattedReviewDate":"Jun 22, 2025","reviewSourceCode":3,"reviewIncentiveCode":2,"productNames":"SAP Cloud ERP","reviewRating":3,"industryCd":null,"industryName":"Services (non-Government)","companySizeCd":null,"companySize":"\u003c50M USD","jobTitle":"IT MANAGER","reviewSummary":"Difficult to setup, great customer support who were really helpful","reviewHeadline":"Challenging Initial Setup and High Cost Offset by Helpful Customer Support","upVotes":null,"functionCd":null,"function":null,"partnerReview":null,"tags":null,"productSeoNames":["sap-cloud-erp-1885459056"],"vendorSeoName":"sap","sortValue":null},{"reviewId":6252940,"formattedReviewDate":"Jun 20, 2025","reviewSourceCode":3,"reviewIncentiveCode":2,"productNames":"SAP Cloud ERP","reviewRating":3,"industryCd":null,"industryName":"Banking","companySizeCd":null,"companySize":"50M-1B USD","jobTitle":"MANAGER, IT SECURITY AND RISK MANAGEMENT","reviewSummary":"herramienta que ayuda a la gestion administrativa pero con problemas en la personalizacion de roles y perfiles","reviewHeadline":"Administración eficiente aunque presenta dificultades para adaptar roles específicos","upVotes":null,"functionCd":null,"function":null,"partnerReview":null,"tags":null,"productSeoNames":["sap-cloud-erp-1885459056"],"vendorSeoName":"sap","sortValue":null},{"reviewId":6243558,"formattedReviewDate":"Jun 16, 2025","reviewSourceCode":3,"reviewIncentiveCode":2,"productNames":"SAP Cloud ERP","reviewRating":3,"industryCd":null,"industryName":"Banking","companySizeCd":null,"companySize":"50M-1B USD","jobTitle":"IT Associate","reviewSummary":"it\u0027s a software that doesn\u0027t integrate with any other  infrastructure, which is really annoying. Transitioning from legacy systems to SAP hana is often a complex and high risk project. \n","reviewHeadline":"Complexity Of Transition From Legacy Systems To SAP Hana Raises Concerns","upVotes":null,"functionCd":null,"function":null,"partnerReview":null,"tags":null,"productSeoNames":["sap-cloud-erp-1885459056"],"vendorSeoName":"sap","sortValue":null},{"reviewId":5870512,"formattedReviewDate":"Dec 11, 2024","reviewSourceCode":4,"reviewIncentiveCode":2,"productNames":"SAP Cloud ERP","reviewRating":3,"industryCd":null,"industryName":"Software","companySizeCd":null,"companySize":"50M-1B USD","jobTitle":"IT Associate","reviewSummary":"We are using sap s/4 hana public cloud for our business since 2021 and i find it excellent Saas offering by SAP as it eliminated the worry to for the maintenance of infrastructure , application and database with the market changes and always keep us updated with the best practice and market standard.So overall experience with the product is positive.","reviewHeadline":"Balancing Benefits \u0026 Challenges of SAP S/4 HANA Public Cloud","upVotes":null,"functionCd":null,"function":null,"partnerReview":null,"tags":null,"productSeoNames":["sap-cloud-erp-1885459056"],"vendorSeoName":"sap","sortValue":null},{"reviewId":5770972,"formattedReviewDate":"Oct 30, 2024","reviewSourceCode":4,"reviewIncentiveCode":2,"productNames":"SAP Cloud ERP","reviewRating":3,"industryCd":null,"industryName":"Manufacturing","companySizeCd":null,"companySize":"1B-10B USD","jobTitle":"Director of Human Resources","reviewSummary":"currently in implementation mode with an expected end date of 12/26","reviewHeadline":"Global Payroll Solution: Overcoming Implementation Challenges","upVotes":null,"functionCd":null,"function":null,"partnerReview":null,"tags":null,"productSeoNames":["sap-cloud-erp-1885459056"],"vendorSeoName":"sap","sortValue":null},{"reviewId":5747878,"formattedReviewDate":"Oct 18, 2024","reviewSourceCode":4,"reviewIncentiveCode":2,"productNames":"SAP Cloud ERP","reviewRating":3,"industryCd":null,"industryName":"Consumer Goods","companySizeCd":null,"companySize":"1B-10B USD","jobTitle":"Procurement Associate","reviewSummary":"interface is good but the product lacks speed of completing tasks","reviewHeadline":"Understanding User Experiences: Interface Appreciation Meets Speed Concerns","upVotes":null,"functionCd":null,"function":null,"partnerReview":null,"tags":null,"productSeoNames":["sap-cloud-erp-1885459056"],"vendorSeoName":"sap","sortValue":null},{"reviewId":5695006,"formattedReviewDate":"Sep 23, 2024","reviewSourceCode":3,"reviewIncentiveCode":2,"productNames":"SAP Cloud ERP","reviewRating":3,"industryCd":null,"industryName":"Education","companySizeCd":null,"companySize":"Gov\u0027t/PS/Ed","jobTitle":"Senior Manager","reviewSummary":"Overall, SAP S/4HANA is far more sophisticated than its predecessor. I like the realtime reporting functionality, which allows for operational efficiency and decision making capabilities. Although efficient, depending on the user, the sophistication can be overwhelming and intimidating. It has taken me quite some time to learn to match my process to the new interface. The interface looks to be quite user-friendly but the many levels of functionality takes some dedicated time to learn.","reviewHeadline":"SAP S/4HANA: A Time-Consuming Learning Curve with Benefits","upVotes":null,"functionCd":null,"function":null,"partnerReview":null,"tags":null,"productSeoNames":["sap-cloud-erp-1885459056"],"vendorSeoName":"sap","sortValue":null},{"reviewId":5513956,"formattedReviewDate":"Jun 7, 2024","reviewSourceCode":4,"reviewIncentiveCode":2,"productNames":"SAP Cloud ERP","reviewRating":3,"industryCd":null,"industryName":"Construction","companySizeCd":null,"companySize":"1B-10B USD","jobTitle":"SENIOR DIRECTOR, IT","reviewSummary":"need more engagement and partnership to better align the product roadmap","reviewHeadline":"S4","upVotes":null,"functionCd":null,"function":null,"partnerReview":null,"tags":null,"productSeoNames":["sap-cloud-erp-1885459056"],"vendorSeoName":"sap","sortValue":null},{"reviewId":5510022,"formattedReviewDate":"Jun 5, 2024","reviewSourceCode":4,"reviewIncentiveCode":2,"productNames":"SAP Cloud ERP","reviewRating":3,"industryCd":null,"industryName":"Retail","companySizeCd":null,"companySize":"50M-1B USD","jobTitle":"Finance Associate","reviewSummary":"It was good, but the sections are so fast. Need more time to focus the session","reviewHeadline":"Quick Sections in Financial Report: A Double-Edged Sword","upVotes":null,"functionCd":null,"function":null,"partnerReview":null,"tags":null,"productSeoNames":["sap-cloud-erp-1885459056"],"vendorSeoName":"sap","sortValue":null},{"reviewId":5509452,"formattedReviewDate":"Jun 5, 2024","reviewSourceCode":4,"reviewIncentiveCode":2,"productNames":"SAP Cloud ERP","reviewRating":3,"industryCd":null,"industryName":"Manufacturing","companySizeCd":null,"companySize":"1B-10B USD","jobTitle":"Manager","reviewSummary":"The cloud is a bit slow and not as intuitive as on prem version.  ","reviewHeadline":"Average user ","upVotes":null,"functionCd":null,"function":null,"partnerReview":null,"tags":null,"productSeoNames":["sap-cloud-erp-1885459056"],"vendorSeoName":"sap","sortValue":null},{"reviewId":5509074,"formattedReviewDate":"Jun 5, 2024","reviewSourceCode":4,"reviewIncentiveCode":2,"productNames":"SAP Cloud ERP","reviewRating":3,"industryCd":null,"industryName":"Consumer Goods","companySizeCd":null,"companySize":"50M-1B USD","jobTitle":"SAP Customer Master Data Supervisor","reviewSummary":"Huge push for AI involvement. It would be helpful to be able to delegate  more resources to help implement the available products if there is a business ask for it. Having the support and hands on services to take the current process and show what it can do is wonderful, however  its best when its able to go live. ","reviewHeadline":"User Concerns on Navigating Seamless AI Systems","upVotes":null,"functionCd":null,"function":null,"partnerReview":null,"tags":null,"productSeoNames":["sap-cloud-erp-1885459056"],"vendorSeoName":"sap","sortValue":null},{"reviewId":5504266,"formattedReviewDate":"Jun 3, 2024","reviewSourceCode":4,"reviewIncentiveCode":2,"productNames":"SAP Cloud ERP","reviewRating":3,"industryCd":null,"industryName":"Energy and Utilities","companySizeCd":null,"companySize":"1B-10B USD","jobTitle":"IT Manager","reviewSummary":"It mostly fulfils our business requirements but some custom code has to be developed","reviewHeadline":"Impact of custom coding on future updates and maintenance","upVotes":null,"functionCd":null,"function":null,"partnerReview":null,"tags":null,"productSeoNames":["sap-cloud-erp-1885459056"],"vendorSeoName":"sap","sortValue":null},{"reviewId":5504238,"formattedReviewDate":"Jun 3, 2024","reviewSourceCode":4,"reviewIncentiveCode":2,"productNames":"SAP Cloud ERP","reviewRating":3,"industryCd":null,"industryName":"Healthcare and Biotech","companySizeCd":null,"companySize":"10B+ USD","jobTitle":"EXECUTIVE DIRECTOR GLOBAL ACCOUNTING","reviewSummary":"We use ECC 6.0 and we are in the process of evaluating S4.  The experience has been average since there are many things that need to be customized. Hopefully S4 will bring more innnovations.","reviewHeadline":"Embracing Innovations in S4 With a Robust Transaction System","upVotes":null,"functionCd":null,"function":null,"partnerReview":null,"tags":null,"productSeoNames":["sap-cloud-erp-1885459056"],"vendorSeoName":"sap","sortValue":null},{"reviewId":5449084,"formattedReviewDate":"May 2, 2024","reviewSourceCode":2,"reviewIncentiveCode":1,"productNames":"SAP Cloud ERP","reviewRating":3,"industryCd":null,"industryName":"Manufacturing","companySizeCd":null,"companySize":"50M-1B USD","jobTitle":"VP FINANCE","reviewSummary":"The experience has been well.  We implemented 2 years ago, and have the customer success package.  The system works well, and we really like that there were pre-built in standard processes which enables us to do a quicker implementation.  We have found some frustrations in moving to the standard SAP processes, but it was what we wanted as we needed to bring our processes into the 21st century.  \n\nThe SAP partner with the customer success package has helped get SAP experts to walk through certain issues and processes with us to allow for continued improvement as we use the system.","reviewHeadline":"SAP Public cloud","upVotes":null,"functionCd":null,"function":null,"partnerReview":null,"tags":null,"productSeoNames":["sap-cloud-erp-1885459056"],"vendorSeoName":"sap","sortValue":null},{"reviewId":5447404,"formattedReviewDate":"May 1, 2024","reviewSourceCode":4,"reviewIncentiveCode":2,"productNames":"SAP Cloud ERP","reviewRating":3,"industryCd":null,"industryName":"Services (non-Government)","companySizeCd":null,"companySize":"1B-10B USD","jobTitle":"Corporate Applications Program Manager - Finance","reviewSummary":"- General accounting and finance functions work as advertised, in multiple countries, currencies, and legal entities. The system has helped shorten the month-end close process and it runs like clock work.\n- Beyond the core accounting functions, SAP provides a platform for custom application development to fill the gaps for unique business needs. Effective apps are critical to a successful SAP S/4Hana experience. The APIs have been sufficient to connect to upstream and downstream apps.","reviewHeadline":"Redefining Business with Reliable SAP S/4Hana Cloud Product","upVotes":null,"functionCd":null,"function":null,"partnerReview":null,"tags":null,"productSeoNames":["sap-cloud-erp-1885459056"],"vendorSeoName":"sap","sortValue":null},{"reviewId":5430572,"formattedReviewDate":"Apr 22, 2024","reviewSourceCode":4,"reviewIncentiveCode":1,"productNames":"SAP Cloud ERP","reviewRating":3,"industryCd":null,"industryName":"IT Services","companySizeCd":null,"companySize":"1B-10B USD","jobTitle":"Group Manager","reviewSummary":"The product is very new and not all capabilities are known","reviewHeadline":"Initial Feedback on New Product Reveals Mixed Reactions","upVotes":null,"functionCd":null,"function":null,"partnerReview":null,"tags":null,"productSeoNames":["sap-cloud-erp-1885459056"],"vendorSeoName":"sap","sortValue":null},{"reviewId":5426858,"formattedReviewDate":"Apr 19, 2024","reviewSourceCode":4,"reviewIncentiveCode":2,"productNames":"SAP Cloud ERP","reviewRating":3,"industryCd":null,"industryName":"Services (non-Government)","companySizeCd":null,"companySize":"50M-1B USD","jobTitle":"Finance Manager","reviewSummary":"Product is easy to use and a lot of documentation is available","reviewHeadline":"Exploring the User-Friendly Experience of This Product","upVotes":null,"functionCd":null,"function":null,"partnerReview":null,"tags":null,"productSeoNames":["sap-cloud-erp-1885459056"],"vendorSeoName":"sap","sortValue":null},{"reviewId":5408552,"formattedReviewDate":"Apr 18, 2024","reviewSourceCode":4,"reviewIncentiveCode":2,"productNames":"SAP Cloud ERP","reviewRating":3,"industryCd":null,"industryName":"Consumer Goods","companySizeCd":null,"companySize":"1B-10B USD","jobTitle":"SAP PLATFORM ADMINISTRATOR","reviewSummary":"The product as such is good but lacks some major tools (like table access or debugging) needed for consulting. The support should be improved a lot. It takes a lot of time to reach the right resource for the support requested. \nTo get useful information, users have to access multiple Fiori reports which is cumbersome for the users. ","reviewHeadline":"Major Tools Lacking in Otherwise Good Product","upVotes":null,"functionCd":null,"function":null,"partnerReview":null,"tags":null,"productSeoNames":["sap-cloud-erp-1885459056"],"vendorSeoName":"sap","sortValue":null},{"reviewId":5405432,"formattedReviewDate":"Apr 9, 2024","reviewSourceCode":4,"reviewIncentiveCode":2,"productNames":"SAP Cloud ERP","reviewRating":3,"industryCd":null,"industryName":"Banking","companySizeCd":null,"companySize":"1B-10B USD","jobTitle":"Application Specialist","reviewSummary":"Too complicated sometimes, the documentation could be improved a lot and support could be faster and better.","reviewHeadline":"Complex but complete","upVotes":null,"functionCd":null,"function":null,"partnerReview":null,"tags":null,"productSeoNames":["sap-cloud-erp-1885459056"],"vendorSeoName":"sap","sortValue":null},{"reviewId":5400886,"formattedReviewDate":"Apr 5, 2024","reviewSourceCode":4,"reviewIncentiveCode":1,"productNames":"SAP Cloud ERP","reviewRating":3,"industryCd":null,"industryName":"Manufacturing","companySizeCd":null,"companySize":"1B-10B USD","jobTitle":"Data Analyst","reviewSummary":"We have to do a lot of research and testing on our own to understand the changes.","reviewHeadline":"Overcoming the Challenge of SAP\u0027s Inadequate Visual Documentation","upVotes":null,"functionCd":null,"function":null,"partnerReview":null,"tags":null,"productSeoNames":["sap-cloud-erp-1885459056"],"vendorSeoName":"sap","sortValue":null},{"reviewId":5392300,"formattedReviewDate":"Apr 2, 2024","reviewSourceCode":4,"reviewIncentiveCode":1,"productNames":"SAP Cloud ERP","reviewRating":3,"industryCd":null,"industryName":"Manufacturing","companySizeCd":null,"companySize":"50M-1B USD","jobTitle":"Implementation Lead","reviewSummary":"Overall, it is very easy and standard to use this platform. Sometimes, it\u0027s tricky where we need to change the standard process. ","reviewHeadline":"Good solution for Standard Best Practices","upVotes":null,"functionCd":null,"function":null,"partnerReview":null,"tags":null,"productSeoNames":["sap-cloud-erp-1885459056"],"vendorSeoName":"sap","sortValue":null},{"reviewId":5362350,"formattedReviewDate":"Mar 18, 2024","reviewSourceCode":3,"reviewIncentiveCode":2,"productNames":"SAP Cloud ERP","reviewRating":2,"industryCd":null,"industryName":"Energy and Utilities","companySizeCd":null,"companySize":"1B-10B USD","jobTitle":"VP, MARKETING \u0026 RETAIL SALES","reviewSummary":"I am not happy with the system because it is not very well integrated in our application landscape and our internal processes got more complex.","reviewHeadline":"Very complex system with upward potential","upVotes":null,"functionCd":null,"function":null,"partnerReview":null,"tags":null,"productSeoNames":["sap-cloud-erp-1885459056"],"vendorSeoName":"sap","sortValue":null},{"reviewId":5045922,"formattedReviewDate":"Oct 12, 2023","reviewSourceCode":3,"reviewIncentiveCode":2,"productNames":"SAP Cloud ERP","reviewRating":3,"industryCd":null,"industryName":"Construction","companySizeCd":null,"companySize":"1B-10B USD","jobTitle":"Warehouse administrator","reviewSummary":"SAP is a complex system, that has many different uses, It can be difficult to work your way through and not all transaction codes are so easily found. it can be painful when in an order and Good\u0027s receipt is required and there is a network number, and if there was a  way to implement double-clicking to get through to the network would make things slightly easier.","reviewHeadline":"SAP is useful just difficult to navigate","upVotes":null,"functionCd":null,"function":null,"partnerReview":null,"tags":null,"productSeoNames":["sap-cloud-erp-1885459056"],"vendorSeoName":"sap","sortValue":null},{"reviewId":5039394,"formattedReviewDate":"Oct 10, 2023","reviewSourceCode":3,"reviewIncentiveCode":2,"productNames":"SAP Cloud ERP","reviewRating":3,"industryCd":null,"industryName":"Manufacturing","companySizeCd":null,"companySize":"50M-1B USD","jobTitle":"SALES ENABLEMENT OPERATIONS LEAD","reviewSummary":"The overall experience transitioning to SAP from another ERP system has been average. We had a lot of complications that we believe couldn\u0027t been recognized / resolved if we had a better understanding of different complexities of integrating SAP. ","reviewHeadline":"Transitioning to SAP takes time","upVotes":null,"functionCd":null,"function":null,"partnerReview":null,"tags":null,"productSeoNames":["sap-cloud-erp-1885459056"],"vendorSeoName":"sap","sortValue":null},{"reviewId":4893376,"formattedReviewDate":"Jul 26, 2023","reviewSourceCode":3,"reviewIncentiveCode":2,"productNames":"SAP Cloud ERP","reviewRating":3,"industryCd":null,"industryName":"Energy and Utilities","companySizeCd":null,"companySize":"1B-10B USD","jobTitle":"VP, MARKETING \u0026 RETAIL SALES","reviewSummary":"SAP 4 Hana is a good tool to manage logistics and procurement. The usability could be better and it is not very flexible.","reviewHeadline":"Good tool for financial and logistics managment.","upVotes":null,"functionCd":null,"function":null,"partnerReview":null,"tags":null,"productSeoNames":["sap-cloud-erp-1885459056"],"vendorSeoName":"sap","sortValue":null},{"reviewId":4866070,"formattedReviewDate":"Jul 10, 2023","reviewSourceCode":3,"reviewIncentiveCode":2,"productNames":"SAP Cloud ERP","reviewRating":3,"industryCd":null,"industryName":"IT Services","companySizeCd":null,"companySize":"50M-1B USD","jobTitle":"AUDIOVISUAL TECHNIC","reviewSummary":"with sap s/4hana cloud we have access to our data from anywhere and whenever we want, we also don\u0027t have to worry about whether tomorrow our hardware becomes obsolete","reviewHeadline":"Sap","upVotes":null,"functionCd":null,"function":null,"partnerReview":null,"tags":null,"productSeoNames":["sap-cloud-erp-1885459056"],"vendorSeoName":"sap","sortValue":null},{"reviewId":4804308,"formattedReviewDate":"Jun 9, 2023","reviewSourceCode":3,"reviewIncentiveCode":2,"productNames":"SAP Cloud ERP","reviewRating":3,"industryCd":null,"industryName":"Software","companySizeCd":null,"companySize":"1B-10B USD","jobTitle":"STAFF PROGRAM MANAGER","reviewSummary":"Interesting product but UI is not intuitive and probably requires a lot of setup/config","reviewHeadline":"Overall average UI ","upVotes":null,"functionCd":null,"function":null,"partnerReview":null,"tags":null,"productSeoNames":["sap-cloud-erp-1885459056"],"vendorSeoName":"sap","sortValue":null},{"reviewId":4802104,"formattedReviewDate":"Jun 9, 2023","reviewSourceCode":2,"reviewIncentiveCode":1,"productNames":"SAP Cloud ERP","reviewRating":3,"industryCd":null,"industryName":"Manufacturing","companySizeCd":null,"companySize":"50M-1B USD","jobTitle":"Sr. Software Engineer","reviewSummary":"I am using this software since 1.5 years. It is a robust system and can handle complicated implementations. ","reviewHeadline":"Robust, powerful \u0026 Awesome","upVotes":null,"functionCd":null,"function":null,"partnerReview":null,"tags":null,"productSeoNames":["sap-cloud-erp-1885459056"],"vendorSeoName":"sap","sortValue":null},{"reviewId":4788814,"formattedReviewDate":"Jun 2, 2023","reviewSourceCode":3,"reviewIncentiveCode":2,"productNames":"SAP Cloud ERP","reviewRating":3,"industryCd":null,"industryName":"Finance (non-banking)","companySizeCd":null,"companySize":"50M-1B USD","jobTitle":"DIRECTOR OF IT","reviewSummary":"SAP4/HANA has a good platform for basic finance functions and analytics","reviewHeadline":"Solid product for financial reporting","upVotes":null,"functionCd":null,"function":null,"partnerReview":null,"tags":null,"productSeoNames":["sap-cloud-erp-1885459056"],"vendorSeoName":"sap","sortValue":null},{"reviewId":4784188,"formattedReviewDate":"Jun 1, 2023","reviewSourceCode":3,"reviewIncentiveCode":2,"productNames":"SAP Cloud ERP","reviewRating":3,"industryCd":null,"industryName":"IT Services","companySizeCd":null,"companySize":"1B-10B USD","jobTitle":"LEAD, INFRASTRUCTURE SPECIALIST","reviewSummary":"Unfortunately, I have to admit that I have a bad experience with this tool overall. It is not intuitive, often something doesn\u0027t work, user interface is poor. I don\u0027t like to use it. ","reviewHeadline":"Complexed ERP ","upVotes":null,"functionCd":null,"function":null,"partnerReview":null,"tags":null,"productSeoNames":["sap-cloud-erp-1885459056"],"vendorSeoName":"sap","sortValue":null},{"reviewId":4525200,"formattedReviewDate":"Dec 12, 2022","reviewSourceCode":3,"reviewIncentiveCode":2,"productNames":"SAP Cloud ERP","reviewRating":3,"industryCd":null,"industryName":"Services (non-Government)","companySizeCd":null,"companySize":"50M-1B USD","jobTitle":"Senior Engineer","reviewSummary":"SAP S/4HANA provides ability to integrate with multiple advanced  technologies that helps to solve complex problems in real time very easily. ","reviewHeadline":"Valuable and Easy to use ERP platform","upVotes":null,"functionCd":null,"function":null,"partnerReview":null,"tags":null,"productSeoNames":["sap-cloud-erp-1885459056"],"vendorSeoName":"sap","sortValue":null},{"reviewId":4493822,"formattedReviewDate":"Nov 19, 2022","reviewSourceCode":3,"reviewIncentiveCode":2,"productNames":"SAP Cloud ERP","reviewRating":3,"industryCd":null,"industryName":"IT Services","companySizeCd":null,"companySize":"50M-1B USD","jobTitle":"CLOUD DELIVERY DIRECTOR","reviewSummary":"I helped to deploy that services on Azure for serveral customers.","reviewHeadline":"SAP Hana is very good solution for customers who wants a high performance database.","upVotes":null,"functionCd":null,"function":null,"partnerReview":null,"tags":null,"productSeoNames":["sap-cloud-erp-1885459056"],"vendorSeoName":"sap","sortValue":null},{"reviewId":4280122,"formattedReviewDate":"Jun 10, 2022","reviewSourceCode":8,"reviewIncentiveCode":1,"productNames":"SAP Cloud ERP","reviewRating":3,"industryCd":null,"industryName":"Consumer Goods","companySizeCd":null,"companySize":"50M-1B USD","jobTitle":"Head Of Digital Marketing","reviewSummary":"SAP ERP is a hudge solution, it\u0027s very customisable with the need of our business. You need to have a team with some expertise on this solution to answer to all the needs of business.","reviewHeadline":"A efficient ERP","upVotes":null,"functionCd":null,"function":null,"partnerReview":null,"tags":null,"productSeoNames":["sap-cloud-erp-1885459056"],"vendorSeoName":"sap","sortValue":null},{"reviewId":4265294,"formattedReviewDate":"Jun 2, 2022","reviewSourceCode":3,"reviewIncentiveCode":2,"productNames":"SAP Cloud ERP","reviewRating":3,"industryCd":null,"industryName":"Consumer Goods","companySizeCd":null,"companySize":"50M-1B USD","jobTitle":"PROGRAM MANAGER","reviewSummary":"We used SAP ERP for a long times, we have a lot of module like PP,MM,HR,FI...\nIts very efficient because each module can andwer some need to our business. We love SAP and we will continue to work on this ERP.","reviewHeadline":"A great ERP for our organisation","upVotes":null,"functionCd":null,"function":null,"partnerReview":null,"tags":null,"productSeoNames":["sap-cloud-erp-1885459056"],"vendorSeoName":"sap","sortValue":null},{"reviewId":4250030,"formattedReviewDate":"May 25, 2022","reviewSourceCode":3,"reviewIncentiveCode":2,"productNames":"SAP Cloud ERP","reviewRating":3,"industryCd":null,"industryName":"Consumer Goods","companySizeCd":null,"companySize":"50M-1B USD","jobTitle":"DEVELOPER","reviewSummary":"SAP is a powerfull solution, very reliable and stable. We use it in our compagny for manage supply, HR...","reviewHeadline":"Powerfull ERP for big compagny","upVotes":null,"functionCd":null,"function":null,"partnerReview":null,"tags":null,"productSeoNames":["sap-cloud-erp-1885459056"],"vendorSeoName":"sap","sortValue":null},{"reviewId":4194212,"formattedReviewDate":"Apr 22, 2022","reviewSourceCode":8,"reviewIncentiveCode":1,"productNames":"SAP Cloud ERP","reviewRating":3,"industryCd":null,"industryName":"Consumer Goods","companySizeCd":null,"companySize":"50M-1B USD","jobTitle":"Manager","reviewSummary":"We used it for a long time and it take a big part on our infrastrucure.\nIt\u0027s very customizable to business requirements","reviewHeadline":"Powerful ERP on cloud","upVotes":null,"functionCd":null,"function":null,"partnerReview":null,"tags":null,"productSeoNames":["sap-cloud-erp-1885459056"],"vendorSeoName":"sap","sortValue":null},{"reviewId":4137810,"formattedReviewDate":"Mar 24, 2022","reviewSourceCode":4,"reviewIncentiveCode":2,"productNames":"SAP Cloud ERP","reviewRating":3,"industryCd":null,"industryName":"Energy and Utilities","companySizeCd":null,"companySize":"50M-1B USD","jobTitle":"unknownTitle","reviewSummary":"In our case S/4 Hana is probably a case of a hammer to crack a nut.  It\u0027s a massive cloud platform that in hindsight is only relevant to large, multi location, multi currency businesses.  For smaller businesses like ours, a smaller ERP or simply a straightforward finance system, would have been better.","reviewHeadline":"Overengineered for what we require.","upVotes":null,"functionCd":null,"function":null,"partnerReview":null,"tags":null,"productSeoNames":["sap-cloud-erp-1885459056"],"vendorSeoName":"sap","sortValue":null},{"reviewId":4131572,"formattedReviewDate":"Mar 22, 2022","reviewSourceCode":4,"reviewIncentiveCode":2,"productNames":"SAP Cloud ERP","reviewRating":3,"industryCd":null,"industryName":"Manufacturing","companySizeCd":null,"companySize":"50M-1B USD","jobTitle":"Head Of Logistic","reviewSummary":"formular = additional effort, performance must improve","reviewHeadline":"Common system which is improving very fast with the persistent customer information","upVotes":null,"functionCd":null,"function":null,"partnerReview":null,"tags":null,"productSeoNames":["sap-cloud-erp-1885459056"],"vendorSeoName":"sap","sortValue":null},{"reviewId":4097494,"formattedReviewDate":"Mar 8, 2022","reviewSourceCode":8,"reviewIncentiveCode":1,"productNames":"SAP Cloud ERP","reviewRating":3,"industryCd":null,"industryName":"Services (non-Government)","companySizeCd":null,"companySize":"50M-1B USD","jobTitle":"SR. HR EXECUTIVE","reviewSummary":"Good software but very slow while processing or uploading the data","reviewHeadline":"Need more improvement","upVotes":null,"functionCd":null,"function":null,"partnerReview":null,"tags":null,"productSeoNames":["sap-cloud-erp-1885459056"],"vendorSeoName":"sap","sortValue":null},{"reviewId":3960274,"formattedReviewDate":"Jan 8, 2022","reviewSourceCode":8,"reviewIncentiveCode":1,"productNames":"SAP Cloud ERP","reviewRating":3,"industryCd":null,"industryName":"Consumer Goods","companySizeCd":null,"companySize":"50M-1B USD","jobTitle":"IT Operations Manager","reviewSummary":"We introduced SAP as a replacement for our former ERP and financial systems. Compared to the old systems, this was a huge leap forward in productivity and gaining revenue - and it still goes on. SAP also works (mostly) flawlessly with our WMS.","reviewHeadline":"Strong ERP system","upVotes":null,"functionCd":null,"function":null,"partnerReview":null,"tags":null,"productSeoNames":["sap-cloud-erp-1885459056"],"vendorSeoName":"sap","sortValue":null},{"reviewId":3492539,"formattedReviewDate":"Jan 5, 2022","reviewSourceCode":3,"reviewIncentiveCode":2,"productNames":"SAP Cloud ERP","reviewRating":3,"industryCd":null,"industryName":"Energy and Utilities","companySizeCd":null,"companySize":"50M-1B USD","jobTitle":"Product Owner","reviewSummary":"SAP QM needs time to implement but when it is done correctly it will help your business in a great deal of quality issues. A great product.","reviewHeadline":"High implementation costs but high quality when done correctly","upVotes":null,"functionCd":null,"function":null,"partnerReview":null,"tags":null,"productSeoNames":["sap-cloud-erp-1885459056"],"vendorSeoName":"sap","sortValue":null},{"reviewId":3894084,"formattedReviewDate":"Dec 6, 2021","reviewSourceCode":4,"reviewIncentiveCode":1,"productNames":"SAP Cloud ERP","reviewRating":3,"industryCd":null,"industryName":"Energy and Utilities","companySizeCd":null,"companySize":"10B+ USD","jobTitle":"Manager, Supply Chain Services \u0026 Technol","reviewSummary":"In evaluating SAP versus peers in the ERP space (both full ERP and best-of-breed competitors), SAP S/4HANA was the best fit for the \"core ERP\" functions (Finance, Asset Management, Capital Spending, and the non-P2P supply chain functions).  It had the capabilities (brood and industry specific) on a modern software stack that could be managed as a cloud service.","reviewHeadline":"SAP S/4 is a very solid choice for a modern ERP platform","upVotes":null,"functionCd":null,"function":null,"partnerReview":null,"tags":null,"productSeoNames":["sap-cloud-erp-1885459056"],"vendorSeoName":"sap","sortValue":null},{"reviewId":3883044,"formattedReviewDate":"Nov 30, 2021","reviewSourceCode":4,"reviewIncentiveCode":1,"productNames":"SAP Cloud ERP","reviewRating":3,"industryCd":null,"industryName":"Healthcare and Biotech","companySizeCd":null,"companySize":"\u003c50M USD","jobTitle":"Sr. Project Manager And Technical Lead","reviewSummary":"SAP S/4 HANA provides a wide variety of functionality for our business.  We are currently using a very small scope of functionality (FI/CO and Indirect Procurement on Ariba)","reviewHeadline":"S4 HANA Cloud Project off to a positive start","upVotes":null,"functionCd":null,"function":null,"partnerReview":null,"tags":null,"productSeoNames":["sap-cloud-erp-1885459056"],"vendorSeoName":"sap","sortValue":null},{"reviewId":3876340,"formattedReviewDate":"Nov 25, 2021","reviewSourceCode":2,"reviewIncentiveCode":1,"productNames":"SAP Cloud ERP","reviewRating":3,"industryCd":null,"industryName":"Hardware","companySizeCd":null,"companySize":"50M-1B USD","jobTitle":"Chief Financial Officer","reviewSummary":"Whilst the S4HANA platform has some really good aspects, there are key pieces of functionality that are either still missing or overly complex","reviewHeadline":"Reasonable product that is still developing although difficult and costly to implement","upVotes":null,"functionCd":null,"function":null,"partnerReview":null,"tags":null,"productSeoNames":["sap-cloud-erp-1885459056"],"vendorSeoName":"sap","sortValue":null},{"reviewId":3875108,"formattedReviewDate":"Nov 25, 2021","reviewSourceCode":2,"reviewIncentiveCode":1,"productNames":"SAP Cloud ERP","reviewRating":3,"industryCd":null,"industryName":"Services (non-Government)","companySizeCd":null,"companySize":"\u003c50M USD","jobTitle":"Application Manager","reviewSummary":"The core ERP is sold and robust. For smaller organisations there is a lot of complexity in S/4HANA Public Cloud. Being a Professional Services company, our main focus are projects which is not one the strong sides. The area is still maturing and suffers due to the inherited underlying complexity of many processes.","reviewHeadline":"S/4HANA Cloud - strong financials  but missed opportunity","upVotes":null,"functionCd":null,"function":null,"partnerReview":null,"tags":null,"productSeoNames":["sap-cloud-erp-1885459056"],"vendorSeoName":"sap","sortValue":null},{"reviewId":3853582,"formattedReviewDate":"Nov 16, 2021","reviewSourceCode":3,"reviewIncentiveCode":2,"productNames":"SAP Cloud ERP","reviewRating":3,"industryCd":null,"industryName":"Miscellaneous","companySizeCd":null,"companySize":"50M-1B USD","jobTitle":"Senior Accounting Analysis","reviewSummary":"This is the worst ERP system I have used. It is very difficult to navigate and not intuitive at all. Customization can be done by IT specialists only via demand and hence very costly and even on then there are limitations on what can be achieved.","reviewHeadline":"Not a happy customer","upVotes":null,"functionCd":null,"function":null,"partnerReview":null,"tags":null,"productSeoNames":["sap-cloud-erp-1885459056"],"vendorSeoName":"sap","sortValue":null},{"reviewId":3785394,"formattedReviewDate":"Oct 4, 2021","reviewSourceCode":3,"reviewIncentiveCode":2,"productNames":"SAP Cloud ERP","reviewRating":3,"industryCd":null,"industryName":"IT Services","companySizeCd":null,"companySize":"\u003c50M USD","jobTitle":"CEO \u0026 Founder","reviewSummary":"Great Solution but implies a complex implementation. It takes a lot of time. I takes a lot of resources. It takes an important investment. ","reviewHeadline":"Great solution but complex implementation. ","upVotes":null,"functionCd":null,"function":null,"partnerReview":null,"tags":null,"productSeoNames":["sap-cloud-erp-1885459056"],"vendorSeoName":"sap","sortValue":null},{"reviewId":1120273,"formattedReviewDate":"Feb 22, 2021","reviewSourceCode":3,"reviewIncentiveCode":1,"productNames":"SAP Cloud ERP","reviewRating":3,"industryCd":null,"industryName":"Consumer Goods","companySizeCd":null,"companySize":"50M-1B USD","jobTitle":"AVP TEchnology","reviewSummary":"Overall experience was 4 as it totally moving from ECC environment to S4HANA. Major benefit was performance and rebuilding of some of process based on current requirement \u0026 needs.\nWe could have used S4/HANA for total digital transformation to focus on role based tile access, embedded analytics,\nIt critical that partner provide value otherwise sometime it becomes another ECC","reviewHeadline":"Go for S4HANA to build digital organization if vision is clear and maturity.","upVotes":null,"functionCd":null,"function":null,"partnerReview":null,"tags":null,"productSeoNames":["sap-cloud-erp-1885459056"],"vendorSeoName":"sap","sortValue":null},{"reviewId":1408180,"formattedReviewDate":"Sep 10, 2020","reviewSourceCode":3,"reviewIncentiveCode":1,"productNames":"SAP Cloud ERP","reviewRating":2,"industryCd":null,"industryName":"Manufacturing","companySizeCd":null,"companySize":"10B+ USD","jobTitle":"Sr. Business Architect, Global Commercia","reviewSummary":"Have not fully evolved from the SAP of days gone bye where your enterprise must change business processes to accommodate their software.","reviewHeadline":"If you were hoping for a breakthrough with HANA, you will be disappointed.","upVotes":null,"functionCd":null,"function":null,"partnerReview":null,"tags":null,"productSeoNames":["sap-cloud-erp-1885459056"],"vendorSeoName":"sap","sortValue":null},{"reviewId":3422281,"formattedReviewDate":"Sep 3, 2020","reviewSourceCode":3,"reviewIncentiveCode":2,"productNames":"SAP Cloud ERP","reviewRating":3,"industryCd":null,"industryName":"Manufacturing","companySizeCd":null,"companySize":"50M-1B USD","jobTitle":"Facilities Responsible","reviewSummary":"As a user it works pretty well.\nIt is has plenty of different possibilities to accommodate any need from the end user.\nIt is fast and sure.","reviewHeadline":"Robust tool to increase standardization in a big company","upVotes":null,"functionCd":null,"function":null,"partnerReview":null,"tags":null,"productSeoNames":["sap-cloud-erp-1885459056"],"vendorSeoName":"sap","sortValue":null},{"reviewId":1411306,"formattedReviewDate":"Aug 23, 2020","reviewSourceCode":null,"reviewIncentiveCode":1,"productNames":"SAP Cloud ERP","reviewRating":3,"industryCd":null,"industryName":"Transportation","companySizeCd":null,"companySize":"\u003c50M USD","jobTitle":"Global Logistics Associate Manager","reviewSummary":"While powerful, the System could be more flexible. It can be difficult to tailor SAP tools to unique needs of our business. ","reviewHeadline":"SAP S/4 HANA Review","upVotes":null,"functionCd":null,"function":null,"partnerReview":null,"tags":null,"productSeoNames":["sap-cloud-erp-1885459056"],"vendorSeoName":"sap","sortValue":null},{"reviewId":1407263,"formattedReviewDate":"Aug 15, 2020","reviewSourceCode":3,"reviewIncentiveCode":2,"productNames":"SAP Cloud ERP","reviewRating":3,"industryCd":null,"industryName":"IT Services","companySizeCd":null,"companySize":"10B+ USD","jobTitle":"Solution Integrator","reviewSummary":"SAP HANA version 4 is being used to as database server where all the data related to cost is stored and can be retrieved easily as per demand.","reviewHeadline":"SAP HANA","upVotes":null,"functionCd":null,"function":null,"partnerReview":null,"tags":null,"productSeoNames":["sap-cloud-erp-1885459056"],"vendorSeoName":"sap","sortValue":null},{"reviewId":1324844,"formattedReviewDate":"Mar 17, 2020","reviewSourceCode":2,"reviewIncentiveCode":1,"productNames":"SAP Cloud ERP","reviewRating":1,"industryCd":null,"industryName":"Manufacturing","companySizeCd":null,"companySize":"50M-1B USD","jobTitle":"CIO","reviewSummary":"We are a $X M global manufacturing company and implemented SAP\u0027s S4 HANA Cloud (S4HC) platform to replace our legacy SAP ECC 6.0 solution.  After an implementation that took 3x longer than anticipated at 4x the cost, issues with core business functionality that simply isn\u0027t present in the solution, and more production outages in the last three months than we have had in the last 5 years with on-prem ECC, I can say with full confidence that I regret moving to S4HC.  It might be a viable solution for a single location manufacturing company but I would not recommend it to anybody for a multi-site implementation or for anybody with international business operations at this time (March 2020).","reviewHeadline":"SAP S4 HANA Cloud (multi-tenant)...proceed with caution","upVotes":null,"functionCd":null,"function":null,"partnerReview":null,"tags":null,"productSeoNames":["sap-cloud-erp-1885459056"],"vendorSeoName":"sap","sortValue":null},{"reviewId":1294248,"formattedReviewDate":"Feb 21, 2020","reviewSourceCode":3,"reviewIncentiveCode":1,"productNames":"SAP Cloud ERP","reviewRating":3,"industryCd":null,"industryName":"Media","companySizeCd":null,"companySize":"\u003c50M USD","jobTitle":"Group ERP Strategist","reviewSummary":"We have a large enterprise exposure to SAP across many of their products and solutions, and a close and productive engagement via a number of channels.\nWe are happy with their current on-premises ERP footprint which has provided a stable cost-effective backbone of our IT landscape. \nWe have major concerns regarding their strategy and roadmap, especially their part towards SAAS, including but not limited to S/4. We see delays, directional changes and delivery issues in multiple areas.  The many changes at seniot levels in teh company has also eroded our confidence. Rebranding of products and solutions adds to the confusion. This all leads to delays in product uptage which will in turn drive up project delivery risk and cost and deferral of value potential.\n\nFor clarity - scope of product answers is SAP S/4HANA Cloud MTE.","reviewHeadline":"SAP needs to get their act together wrt SAAS to retain their market leader positition","upVotes":null,"functionCd":null,"function":null,"partnerReview":null,"tags":null,"productSeoNames":["sap-cloud-erp-1885459056"],"vendorSeoName":"sap","sortValue":null},{"reviewId":1294626,"formattedReviewDate":"Feb 21, 2020","reviewSourceCode":3,"reviewIncentiveCode":1,"productNames":"SAP Cloud ERP","reviewRating":3,"industryCd":null,"industryName":"Manufacturing","companySizeCd":null,"companySize":"50M-1B USD","jobTitle":"IT","reviewSummary":"With our limited scope of licensing and only using a small part of the the financial package within SAP.  What has worked well are: workflow routing, approval process, uploading journal entries is easier.  What hasn\u0027t worked as well: reporting, rolling numbers for balances, different types of reconciliation within the system, budgeting within the system and analysis of actual against budget, cash application is more manual than predicted.","reviewHeadline":"Working within S4","upVotes":null,"functionCd":null,"function":null,"partnerReview":null,"tags":null,"productSeoNames":["sap-cloud-erp-1885459056"],"vendorSeoName":"sap","sortValue":null},{"reviewId":1242729,"formattedReviewDate":"Jan 17, 2020","reviewSourceCode":3,"reviewIncentiveCode":1,"productNames":"SAP Cloud ERP","reviewRating":3,"industryCd":null,"industryName":"Telecommunication","companySizeCd":null,"companySize":"1B-10B USD","jobTitle":"IP ANALYSIS SENIOR SPECIALIST","reviewSummary":"It has a very detailed web GUI. You can report your equipment demands thruogh this application, also you can manage your budgets, your stock reports and your paymnets togehter","reviewHeadline":"Very detailed solution, but very expensive","upVotes":null,"functionCd":null,"function":null,"partnerReview":null,"tags":null,"productSeoNames":["sap-cloud-erp-1885459056"],"vendorSeoName":"sap","sortValue":null},{"reviewId":1217470,"formattedReviewDate":"Jan 7, 2020","reviewSourceCode":3,"reviewIncentiveCode":2,"productNames":"SAP Cloud ERP","reviewRating":3,"industryCd":null,"industryName":"Healthcare and Biotech","companySizeCd":null,"companySize":"10B+ USD","jobTitle":"Engineer","reviewSummary":"Does the job, but UI is not straightforward to navigate, have to remember lots of commands, interface is not very intuitive and interactive, have to google a lot to figure things out.","reviewHeadline":"Hard to navigate the UI","upVotes":null,"functionCd":null,"function":null,"partnerReview":null,"tags":null,"productSeoNames":["sap-cloud-erp-1885459056"],"vendorSeoName":"sap","sortValue":null},{"reviewId":1105523,"formattedReviewDate":"Nov 13, 2019","reviewSourceCode":3,"reviewIncentiveCode":2,"productNames":"SAP Cloud ERP","reviewRating":3,"industryCd":null,"industryName":"Retail","companySizeCd":null,"companySize":"1B-10B USD","jobTitle":"Sr Manager Procurement Operations","reviewSummary":"The system is quite clunky and antiquated.  It requires a lot of work on the users part, very little is automated.","reviewHeadline":"Needs additional features and updating.","upVotes":null,"functionCd":null,"function":null,"partnerReview":null,"tags":null,"productSeoNames":["sap-cloud-erp-1885459056"],"vendorSeoName":"sap","sortValue":null},{"reviewId":1067773,"formattedReviewDate":"Oct 17, 2019","reviewSourceCode":3,"reviewIncentiveCode":2,"productNames":"SAP Cloud ERP","reviewRating":3,"industryCd":null,"industryName":"Manufacturing","companySizeCd":null,"companySize":"50M-1B USD","jobTitle":"Branch Manager","reviewSummary":"SAP QM has very useful tools, as long as you stay inside SAP.  Translating and exporting that data outside of SAP for analysis is lacking.  This prevents more users from reviewing data and dependent on SAP experts to create reporting inside QM that can then be used outside for dissemination.","reviewHeadline":"Initial implementation was mostly smooth, but usage outside of SAP is difficult","upVotes":null,"functionCd":null,"function":null,"partnerReview":null,"tags":null,"productSeoNames":["sap-cloud-erp-1885459056"],"vendorSeoName":"sap","sortValue":null},{"reviewId":1063011,"formattedReviewDate":"Oct 16, 2019","reviewSourceCode":3,"reviewIncentiveCode":2,"productNames":"SAP Cloud ERP","reviewRating":3,"industryCd":null,"industryName":"IT Services","companySizeCd":null,"companySize":"Gov\u0027t/PS/Ed","jobTitle":"System Analyst","reviewSummary":"\n168/5000\nIt is very easy to use some resources and deploy. In addition to offering various quality parameters. It is one of the best tools I have ever had the opportunity to use for this purpose.","reviewHeadline":"It is very easy to use and deploy.","upVotes":null,"functionCd":null,"function":null,"partnerReview":null,"tags":null,"productSeoNames":["sap-cloud-erp-1885459056"],"vendorSeoName":"sap","sortValue":null},{"reviewId":1029044,"formattedReviewDate":"Sep 17, 2019","reviewSourceCode":3,"reviewIncentiveCode":2,"productNames":"SAP Cloud ERP","reviewRating":3,"industryCd":null,"industryName":"IT Services","companySizeCd":null,"companySize":"50M-1B USD","jobTitle":"Senior software engineer","reviewSummary":"I can visualize in a single platform all of an organization\u0027s economic data, provision, deliveries, stores, etc. SAP designed leadership schemes provide a key point converting distance procedures within the same interface. These procedures are streamlined in their execution but they can handle complicated activities and therefore offer more expertise with less difficulty","reviewHeadline":"Integral part for several key business processes","upVotes":null,"functionCd":null,"function":null,"partnerReview":null,"tags":null,"productSeoNames":["sap-cloud-erp-1885459056"],"vendorSeoName":"sap","sortValue":null},{"reviewId":1029045,"formattedReviewDate":"Sep 17, 2019","reviewSourceCode":3,"reviewIncentiveCode":2,"productNames":"SAP Cloud ERP","reviewRating":3,"industryCd":null,"industryName":"Healthcare and Biotech","companySizeCd":null,"companySize":"50M-1B USD","jobTitle":"Research Specialist II","reviewSummary":"SAP is a great software that our company uses daily. SAP has a lot of functions that need to be brought to light. SAP is underutilized!","reviewHeadline":"SAP Functionality Underutilized","upVotes":null,"functionCd":null,"function":null,"partnerReview":null,"tags":null,"productSeoNames":["sap-cloud-erp-1885459056"],"vendorSeoName":"sap","sortValue":null},{"reviewId":1026419,"formattedReviewDate":"Sep 13, 2019","reviewSourceCode":8,"reviewIncentiveCode":2,"productNames":"SAP Cloud ERP","reviewRating":3,"industryCd":null,"industryName":"Manufacturing","companySizeCd":null,"companySize":"10B+ USD","jobTitle":"Internship","reviewSummary":"SAP QM has been a relatively good software for my department, it integrates all of the company and it saves us a lot of time since we don\u0027t need to get data from a lot of different sources all the time. Nevertheless it still lacks some integration with other softwares such as Excel and because of that we lose a lot of time that could be optimized.","reviewHeadline":"SAP QM is good and fulfills its role, but it could be better","upVotes":null,"functionCd":null,"function":null,"partnerReview":null,"tags":null,"productSeoNames":["sap-cloud-erp-1885459056"],"vendorSeoName":"sap","sortValue":null},{"reviewId":995980,"formattedReviewDate":"Aug 9, 2019","reviewSourceCode":3,"reviewIncentiveCode":1,"productNames":"SAP Cloud ERP","reviewRating":3,"industryCd":null,"industryName":"Energy and Utilities","companySizeCd":null,"companySize":"\u003c50M USD","jobTitle":"Head of IT\u0026SAP","reviewSummary":"very often I cant fulfil requests of special fields at the entity. The support and consulting  is not correctly prepared for helping (missing knowledge)\nWthin last two years is  the system functional enabled.","reviewHeadline":"much functional constraints and missing efficient consulting (and even support)","upVotes":null,"functionCd":null,"function":null,"partnerReview":null,"tags":null,"productSeoNames":["sap-cloud-erp-1885459056"],"vendorSeoName":"sap","sortValue":null},{"reviewId":988388,"formattedReviewDate":"Jul 29, 2019","reviewSourceCode":3,"reviewIncentiveCode":1,"productNames":"SAP Cloud ERP","reviewRating":3,"industryCd":null,"industryName":"Manufacturing","companySizeCd":null,"companySize":"10B+ USD","jobTitle":"IT Manager","reviewSummary":"SAP as an ERP is very good. S/4HANA Public Cloud performs as expected. However, the SAP organization is fragmented. Consulting fees are very high vis a\u0027 the market and do not always align with the quality of consulting. Often, the developers are very good but in the Public Cloud it is difficult to get access to them to resolve even simple technical issues. SAP\u0027s management of the platform is still maturing.","reviewHeadline":"SAP the ERP is a good solution; SAP the organization can be challenging.","upVotes":null,"functionCd":null,"function":null,"partnerReview":null,"tags":null,"productSeoNames":["sap-cloud-erp-1885459056"],"vendorSeoName":"sap","sortValue":null},{"reviewId":888750,"formattedReviewDate":"May 11, 2019","reviewSourceCode":3,"reviewIncentiveCode":2,"productNames":"SAP Cloud ERP","reviewRating":3,"industryCd":null,"industryName":"Consumer Goods","companySizeCd":null,"companySize":"50M-1B USD","jobTitle":"Management Trainee","reviewSummary":"The ERP solution offered by SAP is one of the best in the industry. Most of th companies in India are using SAP for its ease of use \u0026 wide range of solution offered.","reviewHeadline":"Best all round solution but the cost is on the higher side","upVotes":null,"functionCd":null,"function":null,"partnerReview":null,"tags":null,"productSeoNames":["sap-cloud-erp-1885459056"],"vendorSeoName":"sap","sortValue":null},{"reviewId":869920,"formattedReviewDate":"May 3, 2019","reviewSourceCode":3,"reviewIncentiveCode":2,"productNames":"SAP Cloud ERP","reviewRating":3,"industryCd":null,"industryName":"Banking","companySizeCd":null,"companySize":"\u003c50M USD","jobTitle":"It Analyst","reviewSummary":"The system is reliable, but it needed a lot of customizations to attend business needs and the implementation was problematic. Overall a good solution, but it does have some improvement points.","reviewHeadline":"Trustable tool, but it needs more flexibility.","upVotes":null,"functionCd":null,"function":null,"partnerReview":null,"tags":null,"productSeoNames":["sap-cloud-erp-1885459056"],"vendorSeoName":"sap","sortValue":null},{"reviewId":848131,"formattedReviewDate":"Apr 25, 2019","reviewSourceCode":8,"reviewIncentiveCode":2,"productNames":"SAP Cloud ERP","reviewRating":3,"industryCd":null,"industryName":"IT Services","companySizeCd":null,"companySize":"\u003c50M USD","jobTitle":"Analyst","reviewSummary":"SAP is a poor and outdated layout platform.\nThe platform does not guarantee us speed in the processes","reviewHeadline":"Surpasses","upVotes":null,"functionCd":null,"function":null,"partnerReview":null,"tags":null,"productSeoNames":["sap-cloud-erp-1885459056"],"vendorSeoName":"sap","sortValue":null},{"reviewId":733087,"formattedReviewDate":"Feb 24, 2019","reviewSourceCode":3,"reviewIncentiveCode":2,"productNames":"SAP Cloud ERP","reviewRating":3,"industryCd":null,"industryName":"Manufacturing","companySizeCd":null,"companySize":"\u003c50M USD","jobTitle":"Financial Controller","reviewSummary":"The robustness of SAP as a product was the cornerstone of our decision to upgrade to the next version of SAP. There were some key elements of the cloud version that were lacking from our previous on premise version and these were not clearly understood from the outset. We felt we had to continually compromise with the final solution. Some aspects of the product were clearly untested, and while minor created a feeling of uncertainty about the products fit for purpose.","reviewHeadline":"Great effort by all parties, but frustrated through lack of knowledge \u0026 experience by all.","upVotes":null,"functionCd":null,"function":null,"partnerReview":null,"tags":null,"productSeoNames":["sap-cloud-erp-1885459056"],"vendorSeoName":"sap","sortValue":null},{"reviewId":731329,"formattedReviewDate":"Feb 22, 2019","reviewSourceCode":3,"reviewIncentiveCode":2,"productNames":"SAP Cloud ERP","reviewRating":3,"industryCd":null,"industryName":"Energy and Utilities","companySizeCd":null,"companySize":"50M-1B USD","jobTitle":"Mechanical Engineer","reviewSummary":"very pleased with the business function and productivity after the implementation. Significantly improved the business system efficiency and very easy to adopt.","reviewHeadline":"Very Smooth deployment from old to new system","upVotes":null,"functionCd":null,"function":null,"partnerReview":null,"tags":null,"productSeoNames":["sap-cloud-erp-1885459056"],"vendorSeoName":"sap","sortValue":null},{"reviewId":678046,"formattedReviewDate":"Jan 17, 2019","reviewSourceCode":2,"reviewIncentiveCode":1,"productNames":"SAP Cloud ERP","reviewRating":3,"industryCd":null,"industryName":"Manufacturing","companySizeCd":null,"companySize":"10B+ USD","jobTitle":"Program Manager","reviewSummary":"Our company had a lot of hiccups initially when impleting this platform. We have many manufacturing locations . The general consensus was that our launch was too premature. Most throughout the company felt that the launch should have been delayed due to some glaring gaps that were detected in process. Of course, our company in retrospect, would have delayed the response and worked further with the SAP teams to iron out the issues prior to unleashing this company-wide.","reviewHeadline":"Painful implementation process; platform launched well prior to gaps being resolved.","upVotes":null,"functionCd":null,"function":null,"partnerReview":null,"tags":null,"productSeoNames":["sap-cloud-erp-1885459056"],"vendorSeoName":"sap","sortValue":null},{"reviewId":672374,"formattedReviewDate":"Jan 15, 2019","reviewSourceCode":3,"reviewIncentiveCode":2,"productNames":"SAP Cloud ERP","reviewRating":3,"industryCd":null,"industryName":"IT Services","companySizeCd":null,"companySize":"\u003c50M USD","jobTitle":"Chief Technical architecture ","reviewSummary":"According to my experience,SAP means flexibility. SAP allows companies to create their own rules within SAP structure.These rules set the parameters for acceptable and unacceptable transactions.So totally controlling company\u0027s decision making process.Company can  determine which employees can access and which can not.Only qualified personnel receive access to personnel data, such as wage rates.We can integrate its data with a variety of databases. SAP can analyze data from any source and conduct collaborative decision making. These features allow SAP to meet the needs of many complex businesses and government organizations.With SAP we can handle many different types of complex transactions, like data entered one time, One Place, At the Source.This ERP solution allows users to automate any process of the company in order to be more efficient.Starting from managing  financial transactions, product life cycles and supply chain activities,evaluating performance, reporting and decision making.SAP\u0027s progress reports are very easy to understand.I am not very happy with SAP\u0027s high cost of purchasing and implementation. For implementing this program we need highly trained employees and hardware and lengthy Implementation time.So,overall it increases our budget.Also we have to be ready for its ongoing costs include software maintenance and periodic upgrades.SAP is having so many modules under one software, which was making the product more complex, and was requiring more training to understand all its features.Also,creation of new set of rules is quite complex according to my experience.It\u0027s not easy to manage the access rights. Its tedious..!! It is a complex program that must offer its users a module to help with the use of tools so that we can take full advantage of its  tools","reviewHeadline":"SAP - \"No Pain No Gain\",get ready for complex but efficient ERP solution.","upVotes":null,"functionCd":null,"function":null,"partnerReview":null,"tags":null,"productSeoNames":["sap-cloud-erp-1885459056"],"vendorSeoName":"sap","sortValue":null},{"reviewId":653422,"formattedReviewDate":"Jan 2, 2019","reviewSourceCode":3,"reviewIncentiveCode":2,"productNames":"SAP Cloud ERP","reviewRating":3,"industryCd":null,"industryName":"Energy and Utilities","companySizeCd":null,"companySize":"50M-1B USD","jobTitle":"Mechanical Engineer","reviewSummary":"very robust and easy to use business management software. I can view the  global inventory for a particular component, lead times, costing etc . Demand and supply.","reviewHeadline":"Review For SAP ERP","upVotes":null,"functionCd":null,"function":null,"partnerReview":null,"tags":null,"productSeoNames":["sap-cloud-erp-1885459056"],"vendorSeoName":"sap","sortValue":null},{"reviewId":652617,"formattedReviewDate":"Dec 31, 2018","reviewSourceCode":3,"reviewIncentiveCode":1,"productNames":"SAP Cloud ERP","reviewRating":3,"industryCd":null,"industryName":"Miscellaneous","companySizeCd":null,"companySize":"50M-1B USD","jobTitle":"Director of Finance","reviewSummary":"The new product, and the knowledge of that product both internally at SAP and with external services partners, is still developing.  This causes misses and frustration in realizing value.\n\nOffsetting this is the fact that the product itself is strong, and has provided good functionality when it is figured out.","reviewHeadline":"New product has challenges and advantages","upVotes":null,"functionCd":null,"function":null,"partnerReview":null,"tags":null,"productSeoNames":["sap-cloud-erp-1885459056"],"vendorSeoName":"sap","sortValue":null},{"reviewId":631289,"formattedReviewDate":"Dec 14, 2018","reviewSourceCode":3,"reviewIncentiveCode":2,"productNames":"SAP Cloud ERP","reviewRating":3,"industryCd":null,"industryName":"Construction","companySizeCd":null,"companySize":"50M-1B USD","jobTitle":"ICT Manager","reviewSummary":"The SAP Procurement and Inventory management module was a great success. the SAP Fi Module had its challenges and these were great lessons to all of us.","reviewHeadline":"Implementation of a good system in a troubled entity is not just tough, but educational","upVotes":null,"functionCd":null,"function":null,"partnerReview":null,"tags":null,"productSeoNames":["sap-cloud-erp-1885459056"],"vendorSeoName":"sap","sortValue":null},{"reviewId":630830,"formattedReviewDate":"Dec 14, 2018","reviewSourceCode":3,"reviewIncentiveCode":1,"productNames":"SAP Cloud ERP","reviewRating":3,"industryCd":null,"industryName":"Transportation","companySizeCd":null,"companySize":"1B-10B USD","jobTitle":"Head of Risk Management, Processes, Syst","reviewSummary":"Implementation of SAP S/4HANA Public Cloud helpful to standardize accounting processes. System change allows discussions on existing processes and inefficienies.\nHowever not all of the expected standard functionalities are available yet. \n","reviewHeadline":"S/4HANA Public Cloud is a target system to decrease complexity but needs more automation","upVotes":null,"functionCd":null,"function":null,"partnerReview":null,"tags":null,"productSeoNames":["sap-cloud-erp-1885459056"],"vendorSeoName":"sap","sortValue":null},{"reviewId":506519,"formattedReviewDate":"Jul 23, 2018","reviewSourceCode":3,"reviewIncentiveCode":1,"productNames":"SAP Cloud ERP","reviewRating":2,"industryCd":null,"industryName":"Government","companySizeCd":null,"companySize":"Gov\u0027t/PS/Ed","jobTitle":"Head of Evaluation","reviewSummary":"The implementation requieres a lot of internal human resources with extensive dedication.\nThe user interfase is not at all friendly or intuitive, some of the solutions require more operational work than before, leaving this extra work to the users. The service level have a negative impact and sometimes the respond of the vendor or partners are not as good as it is needed.\nOur Organization have a benefit on some of the features that the tool gives, for example information gatering and automatization of some of the processes.","reviewHeadline":"Not an easy implementation and impractical usability","upVotes":null,"functionCd":null,"function":null,"partnerReview":null,"tags":null,"productSeoNames":["sap-cloud-erp-1885459056"],"vendorSeoName":"sap","sortValue":null},{"reviewId":505040,"formattedReviewDate":"Jul 19, 2018","reviewSourceCode":3,"reviewIncentiveCode":2,"productNames":"SAP Cloud ERP","reviewRating":3,"industryCd":null,"industryName":"Manufacturing","companySizeCd":null,"companySize":"10B+ USD","jobTitle":"Planner","reviewSummary":"It\u0027s difficult to learn and to understand and is not user friendly such as MS Windows or today\u0027s APPs that are intuitive.","reviewHeadline":"SAP Great at Tracking Details But Difficult to Use and Understand","upVotes":null,"functionCd":null,"function":null,"partnerReview":null,"tags":null,"productSeoNames":["sap-cloud-erp-1885459056"],"vendorSeoName":"sap","sortValue":null},{"reviewId":477371,"formattedReviewDate":"Jul 17, 2018","reviewSourceCode":3,"reviewIncentiveCode":2,"productNames":"SAP Cloud ERP","reviewRating":3,"industryCd":null,"industryName":"Healthcare and Biotech","companySizeCd":null,"companySize":"50M-1B USD","jobTitle":"Head of medical IT department","reviewSummary":"From one side it give great opportunities and preferenses if you ajust all tools right way, by other side solution not flexible for certain needs.","reviewHeadline":"Powerful, but unflexible.","upVotes":null,"functionCd":null,"function":null,"partnerReview":null,"tags":null,"productSeoNames":["sap-cloud-erp-1885459056"],"vendorSeoName":"sap","sortValue":null},{"reviewId":501478,"formattedReviewDate":"Jul 13, 2018","reviewSourceCode":3,"reviewIncentiveCode":2,"productNames":"SAP Cloud ERP","reviewRating":3,"industryCd":null,"industryName":"Banking","companySizeCd":null,"companySize":"50M-1B USD","jobTitle":"Customer Experience Leader","reviewSummary":"The implementation has been interesting, you must be aware of many details and the coordination with the areas must be precise","reviewHeadline":"The implementation is complex","upVotes":null,"functionCd":null,"function":null,"partnerReview":null,"tags":null,"productSeoNames":["sap-cloud-erp-1885459056"],"vendorSeoName":"sap","sortValue":null},{"reviewId":480833,"formattedReviewDate":"May 31, 2018","reviewSourceCode":3,"reviewIncentiveCode":2,"productNames":"SAP Cloud ERP","reviewRating":3,"industryCd":null,"industryName":"Consumer Goods","companySizeCd":null,"companySize":"1B-10B USD","jobTitle":"Manager -Engineering, Master Data","reviewSummary":"The tool is not very intuitive. The SAP website has lots of information for learning about the transactions.","reviewHeadline":"Review for SAP","upVotes":null,"functionCd":null,"function":null,"partnerReview":null,"tags":null,"productSeoNames":["sap-cloud-erp-1885459056"],"vendorSeoName":"sap","sortValue":null},{"reviewId":460753,"formattedReviewDate":"Apr 18, 2018","reviewSourceCode":3,"reviewIncentiveCode":2,"productNames":"SAP Cloud ERP","reviewRating":2,"industryCd":null,"industryName":"Manufacturing","companySizeCd":null,"companySize":"1B-10B USD","jobTitle":"Quality Manager ","reviewSummary":"the tool is not user friendly and is difficult to customize.  the tool could not be made to support existing processes.   much stress to end users","reviewHeadline":"SAP - painful","upVotes":null,"functionCd":null,"function":null,"partnerReview":null,"tags":null,"productSeoNames":["sap-cloud-erp-1885459056"],"vendorSeoName":"sap","sortValue":null},{"reviewId":460312,"formattedReviewDate":"Apr 18, 2018","reviewSourceCode":3,"reviewIncentiveCode":2,"productNames":"SAP Cloud ERP","reviewRating":3,"industryCd":null,"industryName":"Banking","companySizeCd":null,"companySize":"50M-1B USD","jobTitle":"Executive Manager","reviewSummary":"Vendors say one thing and reality is completelly different. As user we have poor experience during exploring phase. SAP consultant do not help us to underestand the solotion and we have problems in development and test phase.","reviewHeadline":"The exploration phase was uncessufully","upVotes":null,"functionCd":null,"function":null,"partnerReview":null,"tags":null,"productSeoNames":["sap-cloud-erp-1885459056"],"vendorSeoName":"sap","sortValue":null},{"reviewId":448572,"formattedReviewDate":"Mar 20, 2018","reviewSourceCode":3,"reviewIncentiveCode":2,"productNames":"SAP Cloud ERP","reviewRating":3,"industryCd":null,"industryName":"Manufacturing","companySizeCd":null,"companySize":"50M-1B USD","jobTitle":"Head of IT","reviewSummary":"Quite complex implementation","reviewHeadline":"Quite complex implementation, needs a strong mature own organisation","upVotes":null,"functionCd":null,"function":null,"partnerReview":null,"tags":null,"productSeoNames":["sap-cloud-erp-1885459056"],"vendorSeoName":"sap","sortValue":null},{"reviewId":403122,"formattedReviewDate":"Dec 13, 2017","reviewSourceCode":3,"reviewIncentiveCode":2,"productNames":"SAP Cloud ERP","reviewRating":3,"industryCd":null,"industryName":"Hardware","companySizeCd":null,"companySize":"50M-1B USD","jobTitle":"CEO","reviewSummary":"Consultants were ranging from great to pretty poor, depending on personal background and experience","reviewHeadline":"Great Solutions, but highly depending on Consultants","upVotes":null,"functionCd":null,"function":null,"partnerReview":null,"tags":null,"productSeoNames":["sap-cloud-erp-1885459056"],"vendorSeoName":"sap","sortValue":null},{"reviewId":402246,"formattedReviewDate":"Dec 12, 2017","reviewSourceCode":3,"reviewIncentiveCode":2,"productNames":"SAP Cloud ERP","reviewRating":3,"industryCd":null,"industryName":"Manufacturing","companySizeCd":null,"companySize":"50M-1B USD","jobTitle":"Associate","reviewSummary":"Many members are involved in Implementation project.\nVender have good knowledge and experience for SAP.","reviewHeadline":"De facto standard for pharmaceutical company","upVotes":null,"functionCd":null,"function":null,"partnerReview":null,"tags":null,"productSeoNames":["sap-cloud-erp-1885459056"],"vendorSeoName":"sap","sortValue":null},{"reviewId":383301,"formattedReviewDate":"Nov 7, 2017","reviewSourceCode":3,"reviewIncentiveCode":1,"productNames":"SAP Cloud ERP","reviewRating":3,"industryCd":null,"industryName":"Finance (non-banking)","companySizeCd":null,"companySize":"Gov\u0027t/PS/Ed","jobTitle":"IT Architect","reviewSummary":"ERP is very difficult system for business users, we need a lot of trainings for educate people","reviewHeadline":"for ERP we need change management and educated users","upVotes":null,"functionCd":null,"function":null,"partnerReview":null,"tags":null,"productSeoNames":["sap-cloud-erp-1885459056"],"vendorSeoName":"sap","sortValue":null},{"reviewId":382456,"formattedReviewDate":"Nov 5, 2017","reviewSourceCode":3,"reviewIncentiveCode":2,"productNames":"SAP Cloud ERP","reviewRating":3,"industryCd":null,"industryName":"Transportation","companySizeCd":null,"companySize":"1B-10B USD","jobTitle":"IT Director","reviewSummary":"Their software is valuable but expensive. The implemation is not an easy traject but at the end you will have an stable and good solution","reviewHeadline":"the application is valuable but intgrations of the components hybris billing must better ","upVotes":null,"functionCd":null,"function":null,"partnerReview":null,"tags":null,"productSeoNames":["sap-cloud-erp-1885459056"],"vendorSeoName":"sap","sortValue":null},{"reviewId":367101,"formattedReviewDate":"Oct 3, 2017","reviewSourceCode":2,"reviewIncentiveCode":1,"productNames":"SAP Cloud ERP","reviewRating":3,"industryCd":null,"industryName":"Manufacturing","companySizeCd":null,"companySize":"1B-10B USD","jobTitle":"Director, Global Enterprise Service","reviewSummary":"Expensive to impliment.  We worked to keep it as out of the box as possible and are finding now that we must make changes to make it usable and cost effective for the business","reviewHeadline":"Implementation is a journey","upVotes":null,"functionCd":null,"function":null,"partnerReview":null,"tags":null,"productSeoNames":["sap-cloud-erp-1885459056"],"vendorSeoName":"sap","sortValue":null},{"reviewId":181092,"formattedReviewDate":"Feb 21, 2017","reviewSourceCode":3,"reviewIncentiveCode":2,"productNames":"SAP Cloud ERP","reviewRating":3,"industryCd":null,"industryName":"Manufacturing","companySizeCd":null,"companySize":"\u003c50M USD","jobTitle":"Compliance Manager","reviewSummary":"The lengthy process, cumbersome at times.","reviewHeadline":"OK, not user friendly applications","upVotes":null,"functionCd":null,"function":null,"partnerReview":null,"tags":null,"productSeoNames":["sap-cloud-erp-1885459056"],"vendorSeoName":"sap","sortValue":null},{"reviewId":124393,"formattedReviewDate":"Dec 7, 2016","reviewSourceCode":3,"reviewIncentiveCode":2,"productNames":"SAP Cloud ERP","reviewRating":3,"industryCd":null,"industryName":"Manufacturing","companySizeCd":null,"companySize":"1B-10B USD","jobTitle":"Director BAM","reviewSummary":"expensive and increasingly arrogant but single most capable company","reviewHeadline":"SAP will uncover process and organizational weaknesses but reward the disciplined","upVotes":null,"functionCd":null,"function":null,"partnerReview":null,"tags":null,"productSeoNames":["sap-cloud-erp-1885459056"],"vendorSeoName":"sap","sortValue":null},{"reviewId":113014,"formattedReviewDate":"Nov 9, 2016","reviewSourceCode":2,"reviewIncentiveCode":2,"productNames":"SAP Cloud ERP","reviewRating":3,"industryCd":null,"industryName":"Banking","companySizeCd":null,"companySize":"Gov\u0027t/PS/Ed","jobTitle":"Deputy CIO","reviewSummary":"Good product but poor integration and consultancy services","reviewHeadline":"Good product but poor integration and consultancy services","upVotes":null,"functionCd":null,"function":null,"partnerReview":null,"tags":null,"productSeoNames":["sap-cloud-erp-1885459056"],"vendorSeoName":"sap","sortValue":null},{"reviewId":46237,"formattedReviewDate":"May 12, 2016","reviewSourceCode":null,"reviewIncentiveCode":1,"productNames":"SAP Cloud ERP","reviewRating":3,"industryCd":null,"industryName":"IT Services","companySizeCd":null,"companySize":"\u003c50M USD","jobTitle":"Business Architect","reviewSummary":"Initially focused on business value, now focused on selling us new products.","reviewHeadline":"ERP integrated solution","upVotes":null,"functionCd":null,"function":null,"partnerReview":null,"tags":null,"productSeoNames":["sap-cloud-erp-1885459056"],"vendorSeoName":"sap","sortValue":null},{"reviewId":40309,"formattedReviewDate":"Apr 21, 2016","reviewSourceCode":null,"reviewIncentiveCode":1,"productNames":"SAP Cloud ERP","reviewRating":3,"industryCd":null,"industryName":"Healthcare and Biotech","companySizeCd":null,"companySize":"50M-1B USD","jobTitle":"Director Project Management Office","reviewSummary":"We did not have a good experience with the first vendor.   The first deployment was not successfully implemented.  The user community did not like the system.  We brought in the a second vendor to fix many problems left by the first vendor.  We are still working to change the perception and get buy in from the user community.","reviewHeadline":"Implementation was hard.  We had a lot of problem that we are still resolving.","upVotes":null,"functionCd":null,"function":null,"partnerReview":null,"tags":null,"productSeoNames":["sap-cloud-erp-1885459056"],"vendorSeoName":"sap","sortValue":null}];
+
+/* ============================ THEME DEFINITIONS ============================ */
+const DEFAULT_THEMES = [
+  {id:'complexity', name:'Implementation Complexity', colour:'red',    kw:['implement','complex','difficult','complicated','painful','challenging','steep learning','hard to','not intuitive','not user-friendly','confusing','overwhelm']},
+  {id:'cost',       name:'Total Cost of Ownership',  colour:'amber',  kw:['cost','expensive','pricing','licence','licens','consultant','costly','budget','overrun','roi','price']},
+  {id:'customisation',name:'Customisation Limitations',colour:'amber',kw:['customis','customiz','flexib','rigid','hard-coded','standard process','out of the box','configuration','not tailored','bespoke','adapt','workaround']},
+  {id:'support',    name:'Support & Partner Quality',colour:'red',    kw:['support','partner','consultant','helpdesk','response time','ticket','slow response','not helpful','knowledge gap','inexperienced']},
+  {id:'migration',  name:'Migration & Upgrade Pain', colour:'amber',  kw:['migrat','upgrade','s/4','hana','ecc','legacy','transition','cutover','data migration','go-live','rollout']},
+  {id:'performance',name:'System Performance',       colour:'red',    kw:['slow','performance','lag','loading','timeout','crash','downtime','outage','unreliable','unstable']},
+  {id:'ux',         name:'User Experience',          colour:'amber',  kw:['interface','ui','ux','user experience','clunky','outdated','not modern','hard to navigate','ugly','not intuitive','not easy to use']},
+  {id:'integration',name:'Integration Complexity',   colour:'blue',   kw:['integrat','api','middleware','connect','third party','third-party','interface','other systems','data sync']},
+  {id:'reporting',  name:'Reporting & Analytics Gaps',colour:'blue',  kw:['report','analytics','dashboard','insight','visibility','data quality','output','export','business intelligence','bi']},
+  {id:'cloud_lock', name:'Cloud/SaaS Lock-in',       colour:'purple', kw:['public cloud','lock-in','lock in','saas','multi-tenant','no control','forced','standard version',"can't change",'cannot change']}
+];
+const COLOUR_MAP = {red:'#EF4444',amber:'#F59E0B',blue:'#60A5FA',purple:'#A78BFA',green:'#00C67A',teal:'#2DD4BF',grey:'#777777'};
+const IFS_TARGET_INDUSTRIES = ['Manufacturing','Energy and Utilities','Aerospace & Defence','Aerospace and Defense','Services (non-Government)'];
+const IFS_SWEET_SPOT = ['50M-1B USD','1B-10B USD'];
+const SAP_EVENTS = [
+  {date:'2017-01', label:'S/4HANA Cloud GA'},
+  {date:'2021-01', label:'RISE with SAP'},
+  {date:'2023-05', label:'Joule announced'},
+  {date:'2025-01', label:'API policy controversy'}
+];
+
+/* ============================ STATE ============================ */
+let RAW = [];                 // all loaded records (with computed fields)
+let THEMES = loadThemes();
+const state = {
+  vendor:new Set(), product:new Set(), industry:new Set(), size:new Set(),
+  ratings:new Set([1,2,3,4,5]), lang:'all', incentive:'all', keyword:'',
+  dateMin:null, dateMax:null, dMinSel:null, dMaxSel:null
+};
+let flagged = new Set(JSON.parse(localStorage.getItem('ci_flagged_quotes')||'[]'));
+let industryRelevance = JSON.parse(localStorage.getItem('ci_industry_relevance')||'{}');
+let charts = {};
+let explorerPage = 1, explorerSort='date', explorerShowAll=false, explorerSearch='';
+const selectedRows = new Set();
+let quoteSort='newest', quoteFlaggedOnly=false, quoteSearch='';
+
+/* ============================ UTIL ============================ */
+const $ = s=>document.querySelector(s);
+const $$ = s=>Array.from(document.querySelectorAll(s));
+const esc = s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function toast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),2000);}
+function parseDate(s){ // "Jun 14, 2026" -> Date
+  if(!s) return null; const d=new Date(s); return isNaN(d)?null:d;
+}
+function ym(d){return d?d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'):null;}
+function starStr(r){return '★★★★★☆☆☆☆☆'.slice(5-r,10-r);}
+function starColour(r){return r>=4?'var(--green)':r>=3?'var(--amber)':'var(--red)';}
+function loadThemes(){
+  const saved = localStorage.getItem('ci_theme_config');
+  if(saved){ try{ const o=JSON.parse(saved); return DEFAULT_THEMES.map(t=>({...t, kw:o[t.id]||t.kw})); }catch(e){} }
+  return DEFAULT_THEMES.map(t=>({...t}));
+}
+function saveThemes(){ const o={}; THEMES.forEach(t=>o[t.id]=t.kw); localStorage.setItem('ci_theme_config',JSON.stringify(o)); }
+
+function detectLang(txt){
+  const t=(txt||'').toLowerCase();
+  const count = arr=>arr.reduce((n,w)=>n+(t.split(w).length-1),0);
+  if(count([' und ',' der ',' die ',' das ',' nicht ',' ist '])>3) return 'DE';
+  if(count([' è ',' sono ',' della ',' anche ',' per '])>3) return 'IT';
+  if(count([' que ',' con ',' para ',' por ',' también '])>3) return 'ES';
+  return 'EN';
+}
+
+/* ============================ THEME ENGINE ============================ */
+function analyse(records){
+  records.forEach(r=>{
+    const text=((r.reviewHeadline||'')+' '+(r.reviewSummary||'')).toLowerCase();
+    const themes=[];
+    for(const th of THEMES){ if(th.kw.some(k=>k && text.includes(k.toLowerCase()))) themes.push(th.id); }
+    r._themes=themes;
+    r._lang=detectLang(r.reviewSummary);
+    r._date=parseDate(r.formattedReviewDate);
+    r._ym=ym(r._date);
+    // IFS displacement score
+    let s=0; const rt=r.reviewRating;
+    if(rt<=2) s+=25; else if(rt===3) s+=15;
+    if(themes.includes('complexity')||themes.includes('ux')) s+=20;
+    if(themes.includes('cost')) s+=15;
+    if(themes.includes('support')) s+=10;
+    if(themes.includes('customisation')) s+=10;
+    if(IFS_TARGET_INDUSTRIES.includes(r.industryName)) s+=10;
+    if(IFS_SWEET_SPOT.includes(r.companySize)) s+=10;
+    r._score=Math.min(100,s);
+    // marketing signal tags
+    const mk=[];
+    if(text.includes('not intuitive')) mk.push('UX');
+    if(text.includes('painful')) mk.push('Complexity');
+    if(text.includes('expensive')||text.includes('costly')) mk.push('TCO');
+    if(text.includes('lock-in')||text.includes('locked in')) mk.push('Cloud Lock');
+    if(text.includes('not flexible')||text.includes('rigid')) mk.push('Customisation');
+    if(text.includes('go-live')||text.includes('implementation failed')) mk.push('Delivery Risk');
+    r._marketing=mk;
+  });
+  return records;
+}
+function themeById(id){return THEMES.find(t=>t.id===id);}
+function themeTagClass(id){const t=themeById(id);return 'tag tag-'+(t?t.colour:'grey');}
+
+/* ============================ FILTERING ============================ */
+function filtered(){
+  return RAW.filter(r=>{
+    if(state.vendor.size && !state.vendor.has(r.vendorSeoName)) return false;
+    if(state.product.size && !state.product.has(r.productNames)) return false;
+    if(state.industry.size && !state.industry.has(r.industryName)) return false;
+    if(state.size.size && !state.size.has(r.companySize)) return false;
+    if(!state.ratings.has(r.reviewRating)) return false;
+    if(state.lang==='en' && r._lang!=='EN') return false;
+    if(state.lang==='non' && r._lang==='EN') return false;
+    if(state.incentive==='organic' && r.reviewIncentiveCode!==1) return false;
+    if(state.incentive==='incent' && r.reviewIncentiveCode!==2) return false;
+    if(state.keyword){ const t=((r.reviewHeadline||'')+' '+(r.reviewSummary||'')).toLowerCase(); if(!t.includes(state.keyword.toLowerCase())) return false; }
+    if(r._date && state.dMinSel && r._date < state.dMinSel) return false;
+    if(r._date && state.dMaxSel && r._date > state.dMaxSel) return false;
+    return true;
+  });
+}
+function activeFilterCount(){
+  let n=0;
+  n+=state.vendor.size?1:0; n+=state.product.size?1:0; n+=state.industry.size?1:0; n+=state.size.size?1:0;
+  if(state.ratings.size!==5) n++;
+  if(state.lang!=='all') n++;
+  if(state.incentive!=='all') n++;
+  if(state.keyword) n++;
+  if(state.dMinSel && state.dMin && state.dMinSel.getTime()!==state.dMin.getTime()) n++;
+  if(state.dMaxSel && state.dMax && state.dMaxSel.getTime()!==state.dMax.getTime()) n++;
+  return n;
+}
+function resetFilters(){
+  state.vendor.clear();state.product.clear();state.industry.clear();state.size.clear();
+  state.ratings=new Set([1,2,3,4,5]); state.lang='all'; state.incentive='all'; state.keyword='';
+  state.dMinSel=state.dMin; state.dMaxSel=state.dMax;
+  buildFilterBar(); applyFilters();
+}
+
+/* ============================ FILTER BAR UI ============================ */
+function uniq(arr){return Array.from(new Set(arr)).filter(x=>x!=null);}
+function buildFilterBar(){
+  const fb=$('#filterbar');
+  const vendors=uniq(RAW.map(r=>r.vendorSeoName));
+  const products=uniq(RAW.map(r=>r.productNames));
+  const inds=uniq(RAW.map(r=>r.industryName)).sort();
+  const sizes=['<50M USD','50M-1B USD','1B-10B USD','10B+ USD',"Gov't/PS/Ed"].filter(s=>RAW.some(r=>r.companySize===s));
+  let html='';
+  if(vendors.length>1) html+=multiDropdown('Vendor','vendor',vendors);
+  if(products.length>1) html+=multiDropdown('Product','product',products);
+  // rating chips
+  html+='<div class="filter-item"><div class="chiprow" id="ratingChips">'+
+    [1,2,3,4,5].map(r=>`<span class="chip ${state.ratings.has(r)?'on':''}" data-r="${r}">${r}★</span>`).join('')+'</div></div>';
+  html+=multiDropdown('Industry','industry',inds,true);
+  // size chips
+  html+='<div class="filter-item"><div class="chiprow" id="sizeChips">'+
+    sizes.map(s=>`<span class="chip ${state.size.has(s)?'on':''}" data-s="${esc(s)}">${esc(s)}</span>`).join('')+'</div></div>';
+  // date range
+  html+=dateRangeUI();
+  // language seg
+  html+='<div class="filter-item"><div class="seg" id="langSeg">'+
+    [['all','All'],['en','EN'],['non','Non-EN']].map(([v,l])=>`<button data-v="${v}" class="${state.lang===v?'on':''}">${l}</button>`).join('')+'</div></div>';
+  // incentive seg
+  html+='<div class="filter-item"><div class="seg" id="incSeg">'+
+    [['all','All'],['organic','Organic'],['incent','Incentivised']].map(([v,l])=>`<button data-v="${v}" class="${state.incentive===v?'on':''}">${l}</button>`).join('')+'</div></div>';
+  // keyword
+  html+='<div class="filter-item"><input class="kw-input" id="kwInput" placeholder="Keyword search…" value="'+esc(state.keyword)+'"></div>';
+  // meta
+  html+='<div class="filter-meta"><span class="active-badge" id="activeBadge"></span><button class="btn ghost sm" id="resetFiltersBtn">Reset all</button></div>';
+  fb.innerHTML=html;
+  wireFilterBar();
+  updateActiveBadge();
+}
+function multiDropdown(label,key,options,searchable){
+  const sel=state[key];
+  const opts=options.map(o=>`<label class="opt"><input type="checkbox" data-key="${key}" value="${esc(o)}" ${sel.has(o)?'checked':''}> ${esc(o)}</label>`).join('');
+  return `<div class="filter-item">
+    <div class="fbtn" data-dd="${key}">${label} <span class="cnt">${sel.size?sel.size:''}</span> ▾</div>
+    <div class="dropdown" data-ddbody="${key}">
+      ${searchable?`<input class="search" placeholder="Search…" data-ddsearch="${key}">`:''}
+      ${opts}
+    </div></div>`;
+}
+function dateRangeUI(){
+  if(!state.dMin||!state.dMax) return '';
+  const total=(state.dMax-state.dMin);
+  const fmt=d=>d?d.toLocaleDateString('en-GB',{month:'short',year:'numeric'}):'';
+  return `<div class="filter-item"><div class="range-wrap">
+    <span>${fmt(state.dMin)}</span>
+    <input type="range" id="dateMinR" min="0" max="100" value="${Math.round((state.dMinSel-state.dMin)/total*100)||0}">
+    <input type="range" id="dateMaxR" min="0" max="100" value="${Math.round((state.dMaxSel-state.dMin)/total*100)||100}">
+    <span>${fmt(state.dMax)}</span>
+    <span class="mono" id="dateLbl" style="color:var(--purple)">${fmt(state.dMinSel)} – ${fmt(state.dMaxSel)}</span>
+  </div></div>`;
+}
+function wireFilterBar(){
+  $$('.fbtn[data-dd]').forEach(b=>b.onclick=e=>{
+    e.stopPropagation();
+    const k=b.dataset.dd; const body=document.querySelector(`[data-ddbody="${k}"]`);
+    const isOpen=body.classList.contains('open');
+    $$('.dropdown').forEach(d=>d.classList.remove('open'));
+    if(!isOpen) body.classList.add('open');
+  });
+  $$('[data-ddbody] input[type=checkbox]').forEach(c=>c.onchange=()=>{
+    const k=c.dataset.key; if(c.checked) state[k].add(c.value); else state[k].delete(c.value);
+    document.querySelector(`.fbtn[data-dd="${k}"] .cnt`).textContent=state[k].size||'';
+    applyFilters();
+  });
+  $$('[data-ddsearch]').forEach(s=>s.oninput=()=>{
+    const k=s.dataset.ddsearch; const q=s.value.toLowerCase();
+    document.querySelectorAll(`[data-ddbody="${k}"] .opt`).forEach(o=>{o.style.display=o.textContent.toLowerCase().includes(q)?'':'none';});
+  });
+  $('#ratingChips').querySelectorAll('.chip').forEach(c=>c.onclick=()=>{
+    const r=+c.dataset.r; if(state.ratings.has(r))state.ratings.delete(r);else state.ratings.add(r);
+    if(state.ratings.size===0) state.ratings=new Set([1,2,3,4,5]);
+    c.classList.toggle('on',state.ratings.has(r)); applyFilters();
+  });
+  const sc=$('#sizeChips'); if(sc) sc.querySelectorAll('.chip').forEach(c=>c.onclick=()=>{
+    const s=c.dataset.s; if(state.size.has(s))state.size.delete(s);else state.size.add(s);
+    c.classList.toggle('on',state.size.has(s)); applyFilters();
+  });
+  $('#langSeg').querySelectorAll('button').forEach(b=>b.onclick=()=>{state.lang=b.dataset.v;$('#langSeg').querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));applyFilters();});
+  $('#incSeg').querySelectorAll('button').forEach(b=>b.onclick=()=>{state.incentive=b.dataset.v;$('#incSeg').querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));applyFilters();});
+  let kt; $('#kwInput').oninput=e=>{clearTimeout(kt);kt=setTimeout(()=>{state.keyword=e.target.value.trim();applyFilters();},300);};
+  $('#resetFiltersBtn').onclick=resetFilters;
+  const dn=$('#dateMinR'), dx=$('#dateMaxR');
+  if(dn&&dx){
+    const total=state.dMax-state.dMin;
+    const upd=()=>{
+      let a=+dn.value,b=+dx.value; if(a>b){[a,b]=[b,a];}
+      state.dMinSel=new Date(state.dMin.getTime()+total*a/100);
+      state.dMaxSel=new Date(state.dMin.getTime()+total*b/100);
+      const fmt=d=>d.toLocaleDateString('en-GB',{month:'short',year:'numeric'});
+      $('#dateLbl').textContent=fmt(state.dMinSel)+' – '+fmt(state.dMaxSel);
+    };
+    dn.oninput=()=>{upd();}; dx.oninput=()=>{upd();};
+    dn.onchange=()=>{upd();applyFilters();}; dx.onchange=()=>{upd();applyFilters();};
+  }
+}
+document.addEventListener('click',()=>$$('.dropdown').forEach(d=>d.classList.remove('open')));
+function updateActiveBadge(){ const n=activeFilterCount(); $('#activeBadge').textContent=n?`${n} filter${n>1?'s':''} active`:'No filters'; }
+
+/* ============================ APPLY FILTERS / RENDER ============================ */
+let activeSection='overview';
+function applyFilters(){
+  updateActiveBadge();
+  const data=filtered();
+  $('#flagCount').textContent=flagged.size;
+  renderSection(activeSection,data);
+}
+function disposeCharts(){ Object.values(charts).forEach(c=>{try{c.dispose();}catch(e){}}); charts={}; }
+function mkChart(id){ const el=$('#'+id); if(!el)return null; if(charts[id]){try{charts[id].dispose();}catch(e){}} const c=echarts.init(el,null,{renderer:'canvas'}); charts[id]=c; return c; }
+const baseTip={backgroundColor:'#0a0a0a',borderColor:'#222',textStyle:{color:'#bbb',fontSize:11},extraCssText:'border-radius:8px'};
+const axisStyle={axisLine:{lineStyle:{color:'#222'}},axisLabel:{color:'#777',fontSize:10},splitLine:{lineStyle:{color:'#141414'}}};
+
+function renderSection(sec,data){
+  data=data||filtered();
+  if(sec==='overview') renderOverview(data);
+  else if(sec==='explorer') renderExplorer(data);
+  else if(sec==='themes') renderThemes(data);
+  else if(sec==='industry') renderIndustry(data);
+  else if(sec==='size') renderSize(data);
+  else if(sec==='timeline') renderTimeline(data);
+  else if(sec==='quotes') renderQuotes(data);
+  else if(sec==='export') {/* static */}
+}
+
+/* ---------- OVERVIEW ---------- */
+function negPct(data){ if(!data.length) return 0; const neg=data.filter(r=>r._themes.length>0).length; return neg/data.length*100; }
+function renderOverview(data){
+  const total=data.length;
+  const avg=total?(data.reduce((s,r)=>s+r.reviewRating,0)/total):0;
+  const crit=data.filter(r=>r.reviewRating<=2).length;
+  const np=negPct(data);
+  const inds=uniq(data.map(r=>r.industryName)).length;
+  $('#kpiRow').innerHTML=[
+    ['Total Reviews',total,''],
+    ['Avg Rating',avg.toFixed(1)+'★',`across ${total} reviews`],
+    ['Critical (1–2★)',crit,total?`${(crit/total*100).toFixed(1)}% of set`:'',crit?'var(--red)':''],
+    ['Negative Sentiment',np.toFixed(0)+'%',`${data.filter(r=>r._themes.length>0).length} flagged`,'var(--amber)'],
+    ['Industries',inds,'unique verticals']
+  ].map(([l,v,s,col])=>`<div class="stat-card"><div class="stat-label">${l}</div><div class="stat-value" ${col?`style="color:${col}"`:''}>${v}</div><div class="stat-sub">${s||''}</div></div>`).join('');
+
+  if(!total){ emptyEverywhere(); return; }
+
+  // gauge — % positive (free of pain keywords)
+  const pos=100-np;
+  const g=mkChart('gaugeChart');
+  g.setOption({tooltip:{...baseTip,formatter:()=>`Positive: ${pos.toFixed(0)}%<br/>Negative: ${np.toFixed(0)}%<br/>${total} reviews`},
+    series:[{type:'gauge',min:0,max:100,radius:'95%',startAngle:200,endAngle:-20,
+      axisLine:{lineStyle:{width:14,color:[[0.4,'#EF4444'],[0.7,'#F59E0B'],[1,'#00C67A']]}},
+      pointer:{itemStyle:{color:'#A78BFA'}},axisTick:{show:false},splitLine:{distance:-14,length:14,lineStyle:{color:'#000'}},
+      axisLabel:{color:'#777',fontSize:9,distance:-2},
+      detail:{valueAnimation:true,formatter:'{value}%',color:'#fff',fontSize:22,offsetCenter:[0,'58%']},
+      title:{show:false},data:[{value:Math.round(pos)}]}]});
+
+  // rating distribution
+  const rc=mkChart('ratingChart');
+  const counts=[1,2,3,4,5].map(r=>data.filter(x=>x.reviewRating===r).length);
+  const rcols=['#EF4444','#F59E0B','#F59E0B','#60A5FA','#00C67A'];
+  rc.setOption({tooltip:{...baseTip},grid:{left:50,right:20,top:10,bottom:20},
+    xAxis:{type:'value',...axisStyle},yAxis:{type:'category',data:['1★','2★','3★','4★','5★'],...axisStyle},
+    series:[{type:'bar',data:counts.map((v,i)=>({value:v,itemStyle:{color:rcols[i]}})),barWidth:'60%',label:{show:true,position:'right',color:'#bbb'}}]});
+
+  // theme summary cards (top 3 by frequency, with a 4th = top critical)
+  const freq=themeFreq(data);
+  const top=freq.slice(0,3);
+  $('#themeSummaryCards').innerHTML=top.map(t=>{
+    const th=themeById(t.id); const ex=data.find(r=>r._themes.includes(t.id)&&r.reviewRating<=2)||data.find(r=>r._themes.includes(t.id));
+    return `<div class="card theme-card" style="border-left-color:${COLOUR_MAP[th.colour]}">
+      <div class="stat-label">${esc(th.name)}</div>
+      <div class="tc-count">${t.count} <span style="font-size:0.7rem;color:var(--grey)">(${(t.count/total*100).toFixed(0)}%)</span></div>
+      ${ex?`<div class="tc-quote">"${esc((ex.reviewHeadline||'').slice(0,120))}"</div>`:''}
+    </div>`;
+  }).join('') || '<div class="empty">No themes detected.</div>';
+
+  // top displacement signals
+  const sig=[...data].sort((a,b)=>b._score-a._score).slice(0,10);
+  $('#topSignals').innerHTML=sig.map(r=>`
+    <div style="display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);cursor:pointer" onclick="openModal(${r.reviewId})">
+      <span class="score-badge ${scoreClass(r._score)}">${r._score}</span>
+      <span class="stars" style="color:${starColour(r.reviewRating)}">${starStr(r.reviewRating)}</span>
+      <span style="flex:1;color:var(--white);font-size:0.76rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(r.reviewHeadline)}</span>
+      <span class="tag tag-grey">${esc(r.industryName||'')}</span>
+    </div>`).join('');
+
+  // recent ticker
+  const recent=[...data].filter(r=>r._date).sort((a,b)=>b._date-a._date).slice(0,5);
+  $('#recentTicker').innerHTML=recent.map(r=>`
+    <div style="display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);cursor:pointer" onclick="openModal(${r.reviewId})">
+      <span class="stars" style="color:${starColour(r.reviewRating)}">${starStr(r.reviewRating)}</span>
+      <span style="flex:1;color:var(--white);font-size:0.76rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(r.reviewHeadline)}</span>
+      <span class="tag tag-grey">${esc(r.industryName||'')}</span>
+      <span class="mono" style="color:var(--grey);font-size:0.66rem">${esc(r.formattedReviewDate)}</span>
+    </div>`).join('');
+}
+function scoreClass(s){return s>=75?'score-hot':s>=50?'score-warm':'score-cool';}
+function themeFreq(data){
+  return THEMES.map(t=>({id:t.id,name:t.name,colour:t.colour,count:data.filter(r=>r._themes.includes(t.id)).length}))
+    .sort((a,b)=>b.count-a.count);
+}
+function emptyEverywhere(){
+  ['gaugeChart','ratingChart'].forEach(id=>{const c=mkChart(id); if(c)c.clear();});
+  $('#themeSummaryCards').innerHTML=emptyHTML();
+  $('#topSignals').innerHTML=''; $('#recentTicker').innerHTML='';
+}
+function emptyHTML(){return '<div class="empty">No reviews match the current filters.<br><button class="btn ghost sm" onclick="resetFilters()">Reset filters</button></div>';}
+
+/* ---------- REVIEW EXPLORER ---------- */
+function renderExplorer(data){
+  const wrap=$('#explorerTableWrap');
+  let rows=[...data];
+  if(explorerSearch){const q=explorerSearch.toLowerCase();rows=rows.filter(r=>((r.reviewHeadline||'')+' '+(r.reviewSummary||'')).toLowerCase().includes(q));}
+  if(explorerSort==='date') rows.sort((a,b)=>(b._date||0)-(a._date||0));
+  else if(explorerSort==='score') rows.sort((a,b)=>b._score-a._score);
+  else if(explorerSort==='rating') rows.sort((a,b)=>a.reviewRating-b.reviewRating);
+  if(!rows.length){ wrap.innerHTML=emptyHTML(); return; }
+  const per=25; const pages=explorerShowAll?1:Math.ceil(rows.length/per);
+  if(explorerPage>pages) explorerPage=1;
+  const view=explorerShowAll?rows:rows.slice((explorerPage-1)*per,explorerPage*per);
+  let html='<table class="rtable"><thead><tr>'+
+    '<th>✓</th><th>Score</th><th>Date</th><th>Rating</th><th>Headline</th><th>Industry</th><th>Size</th><th>Job Title</th><th>Themes</th><th>Inc.</th><th>Action</th></tr></thead><tbody>';
+  view.forEach(r=>{
+    html+=`<tr class="rrow" data-id="${r.reviewId}">
+      <td onclick="event.stopPropagation()"><input type="checkbox" class="rowsel" data-id="${r.reviewId}" ${selectedRows.has(r.reviewId)?'checked':''}></td>
+      <td><span class="score-badge ${scoreClass(r._score)}">${r._score}</span></td>
+      <td class="mono" style="font-size:0.68rem;white-space:nowrap">${esc(r.formattedReviewDate)}</td>
+      <td><span class="stars" style="color:${starColour(r.reviewRating)}">${starStr(r.reviewRating)}</span></td>
+      <td style="max-width:280px;color:var(--white)">${esc(r.reviewHeadline)}</td>
+      <td><span class="tag tag-grey">${esc(r.industryName||'')}</span></td>
+      <td><span class="tag tag-grey">${esc(r.companySize||'')}</span></td>
+      <td><span class="help-job" title="${esc(r.jobTitle)}">${esc((r.jobTitle||'').slice(0,40))}</span></td>
+      <td>${r._themes.slice(0,3).map(id=>`<span class="${themeTagClass(id)}">${esc(themeById(id).name.split(' ')[0])}</span>`).join('')}</td>
+      <td><span class="lang-badge">${r.reviewIncentiveCode===1?'Organic':'Incent.'}</span></td>
+      <td onclick="event.stopPropagation()"><button class="btn ghost sm" onclick="openModal(${r.reviewId})">View</button></td>
+    </tr>`;
+  });
+  html+='</tbody></table>';
+  if(!explorerShowAll&&pages>1){
+    html+=`<div class="pager"><button id="prevPg" ${explorerPage<=1?'disabled':''}>‹ Prev</button>
+      <span class="pg-info">Page ${explorerPage} / ${pages} · ${rows.length} reviews</span>
+      <button id="nextPg" ${explorerPage>=pages?'disabled':''}>Next ›</button></div>`;
+  } else { html+=`<div class="pager"><span class="pg-info">${rows.length} reviews</span></div>`; }
+  wrap.innerHTML=html;
+  wrap.querySelectorAll('tr.rrow').forEach(tr=>tr.onclick=()=>toggleExpand(tr,+tr.dataset.id));
+  wrap.querySelectorAll('.rowsel').forEach(c=>c.onchange=()=>{const id=+c.dataset.id; if(c.checked)selectedRows.add(id);else selectedRows.delete(id);});
+  const pp=$('#prevPg'),np=$('#nextPg');
+  if(pp)pp.onclick=()=>{explorerPage--;renderExplorer(filtered());};
+  if(np)np.onclick=()=>{explorerPage++;renderExplorer(filtered());};
+}
+function toggleExpand(tr,id){
+  const next=tr.nextElementSibling;
+  if(next&&next.classList.contains('exp-row')){next.remove();return;}
+  const r=RAW.find(x=>x.reviewId===id); if(!r)return;
+  const er=document.createElement('tr'); er.className='exp-row';
+  er.innerHTML=`<td colspan="11"><div class="exp-body">
+    <div class="mmeta" style="margin-bottom:10px;display:flex;gap:8px;flex-wrap:wrap">
+      <span class="lang-badge">${r._lang}</span>
+      ${r._themes.map(tid=>`<span class="${themeTagClass(tid)}">${esc(themeById(tid).name)}</span>`).join('')}
+      ${r._marketing.map(m=>`<span class="tag tag-purple">⚑ ${esc(m)}</span>`).join('')}
+    </div>
+    ${esc(r.reviewSummary)}
+    <div class="exp-actions">
+      <a class="btn ghost sm" target="_blank" href="${gartnerUrl(r)}">Open on Gartner ↗</a>
+      <button class="btn ghost sm" onclick="copyQuote(${id})">Copy for marketing</button>
+      <button class="btn ghost sm" onclick="toggleFlag(${id});renderExplorer(filtered())">${flagged.has(id)?'★ Flagged':'☆ Flag'}</button>
+    </div></div></td>`;
+  tr.after(er);
+}
+function gartnerUrl(r){return `https://www.gartner.com/reviews/market/erp-systems/vendor/${r.vendorSeoName}/product/${(r.productSeoNames&&r.productSeoNames[0])||''}`;}
+function copyQuote(id){const r=RAW.find(x=>x.reviewId===id);const txt=`"${r.reviewHeadline}" — ${r.jobTitle||'Reviewer'}, ${r.industryName||''} company, Gartner Peer Insights`;navigator.clipboard.writeText(txt);toast('Quote copied');}
+function toggleFlag(id){if(flagged.has(id))flagged.delete(id);else flagged.add(id);localStorage.setItem('ci_flagged_quotes',JSON.stringify([...flagged]));$('#flagCount').textContent=flagged.size;renderShortlist();}
+
+/* ---------- MODAL ---------- */
+window.openModal=function(id){
+  const r=RAW.find(x=>x.reviewId===id); if(!r)return;
+  $('#modalCard').innerHTML=`<span class="mclose" onclick="closeModal()">×</span>
+    <h3>${esc(r.reviewHeadline)}</h3>
+    <div class="mmeta">
+      <span class="stars" style="color:${starColour(r.reviewRating)}">${starStr(r.reviewRating)}</span>
+      <span class="tag tag-grey">${esc(r.industryName||'')}</span>
+      <span class="tag tag-grey">${esc(r.companySize||'')}</span>
+      <span class="lang-badge">${r._lang}</span>
+      <span class="score-badge ${scoreClass(r._score)}">Score ${r._score}</span>
+      <span class="mono" style="color:var(--grey)">${esc(r.formattedReviewDate)}</span>
+    </div>
+    <div class="mmeta">${esc(r.jobTitle||'')} · ${r.reviewIncentiveCode===1?'Organic':'Incentivised'}</div>
+    <div style="margin:8px 0">${r._themes.map(tid=>`<span class="${themeTagClass(tid)}">${esc(themeById(tid).name)}</span>`).join('')}</div>
+    <div class="mbody">${esc(r.reviewSummary)}</div>
+    <div class="exp-actions">
+      <a class="btn ghost sm" target="_blank" href="${gartnerUrl(r)}">Open on Gartner ↗</a>
+      <button class="btn ghost sm" onclick="copyQuote(${id})">Copy for marketing</button>
+      <button class="btn primary sm" onclick="toggleFlag(${id});openModal(${id})">${flagged.has(id)?'★ Flagged':'☆ Flag for campaign'}</button>
+    </div>`;
+  $('#modalOverlay').classList.add('open');
+};
+window.closeModal=function(){$('#modalOverlay').classList.remove('open');};
+$('#modalOverlay').onclick=e=>{if(e.target===$('#modalOverlay'))closeModal();};
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeModal();$('#shortlistDrawer').classList.remove('open');}});
+
+/* ---------- THEME ANALYSIS ---------- */
+function renderThemes(data){
+  buildThemeConfig();
+  if(!data.length){ ['themeFreqChart','themeRatingChart','cooccChart','themeIndChart','themeTrendChart'].forEach(id=>{const c=mkChart(id);if(c)c.clear();}); return; }
+  const freq=themeFreq(data);
+  // frequency bar
+  const fc=mkChart('themeFreqChart');
+  const sorted=[...freq].sort((a,b)=>a.count-b.count);
+  fc.setOption({tooltip:{...baseTip,formatter:p=>`${p.name}<br/>Count: ${p.value} reviews<br/>${(p.value/data.length*100).toFixed(1)}% of total`},
+    grid:{left:160,right:30,top:10,bottom:20},
+    xAxis:{type:'value',...axisStyle},yAxis:{type:'category',data:sorted.map(t=>t.name),...axisStyle,axisLabel:{color:'#bbb',fontSize:10}},
+    series:[{type:'bar',data:sorted.map(t=>({value:t.count,itemStyle:{color:COLOUR_MAP[t.colour]}})),label:{show:true,position:'right',color:'#bbb'}}]});
+
+  // theme x rating stacked
+  const trc=mkChart('themeRatingChart');
+  const ratingsList=[1,2,3,4,5].filter(rt=>data.some(r=>r.reviewRating===rt));
+  const rcolM={1:'#EF4444',2:'#F59E0B',3:'#F5b342',4:'#60A5FA',5:'#00C67A'};
+  trc.setOption({tooltip:{...baseTip,trigger:'axis',axisPointer:{type:'shadow'}},legend:{top:0,textStyle:{color:'#777',fontSize:10},data:ratingsList.map(r=>r+'★')},
+    grid:{left:150,right:20,top:30,bottom:20},
+    xAxis:{type:'value',...axisStyle},yAxis:{type:'category',data:freq.map(t=>t.name),...axisStyle,axisLabel:{color:'#bbb',fontSize:10}},
+    series:ratingsList.map(rt=>({name:rt+'★',type:'bar',stack:'x',itemStyle:{color:rcolM[rt]},data:freq.map(t=>data.filter(r=>r._themes.includes(t.id)&&r.reviewRating===rt).length)}))});
+
+  // co-occurrence heatmap
+  const cc=mkChart('cooccChart');
+  const names=THEMES.map(t=>t.name);
+  const cd=[];
+  THEMES.forEach((a,i)=>THEMES.forEach((b,j)=>{const n=data.filter(r=>r._themes.includes(a.id)&&r._themes.includes(b.id)).length;cd.push([j,i,n]);}));
+  const maxC=Math.max(1,...cd.map(d=>d[2]));
+  cc.setOption({tooltip:{...baseTip,formatter:p=>`${names[p.value[1]]} + ${names[p.value[0]]}<br/>${p.value[2]} reviews`},
+    grid:{left:150,right:20,top:10,bottom:90},
+    xAxis:{type:'category',data:names,...axisStyle,axisLabel:{color:'#777',fontSize:8,rotate:45,interval:0}},
+    yAxis:{type:'category',data:names,...axisStyle,axisLabel:{color:'#bbb',fontSize:9}},
+    visualMap:{min:0,max:maxC,calculable:false,show:false,inRange:{color:['#0a0a0a','#5b3fa0','#A78BFA']}},
+    series:[{type:'heatmap',data:cd,label:{show:true,color:'#fff',fontSize:8,formatter:p=>p.value[2]||''}}]});
+
+  // theme x industry heatmap
+  const tic=mkChart('themeIndChart');
+  const indNames=uniq(data.map(r=>r.industryName)).map(n=>({n,c:data.filter(r=>r.industryName===n).length})).sort((a,b)=>b.c-a.c).slice(0,10).map(x=>x.n);
+  const td=[];
+  indNames.forEach((ind,i)=>THEMES.forEach((t,j)=>{const n=data.filter(r=>r.industryName===ind&&r._themes.includes(t.id)).length;td.push([j,i,n]);}));
+  const maxT=Math.max(1,...td.map(d=>d[2]));
+  tic.setOption({tooltip:{...baseTip,formatter:p=>`${indNames[p.value[1]]}<br/>${names[p.value[0]]}: ${p.value[2]}`},
+    grid:{left:150,right:20,top:10,bottom:90},
+    xAxis:{type:'category',data:names,...axisStyle,axisLabel:{color:'#777',fontSize:8,rotate:45,interval:0}},
+    yAxis:{type:'category',data:indNames,...axisStyle,axisLabel:{color:'#bbb',fontSize:9}},
+    visualMap:{min:0,max:maxT,calculable:false,show:false,inRange:{color:['#0a0a0a','#b4801a','#F59E0B']}},
+    series:[{type:'heatmap',data:td,label:{show:true,color:'#fff',fontSize:8,formatter:p=>p.value[2]||''}}]});
+
+  // theme trend over time
+  const ttc=mkChart('themeTrendChart');
+  const months=uniq(data.map(r=>r._ym).filter(Boolean)).sort();
+  ttc.setOption({tooltip:{...baseTip,trigger:'axis'},legend:{top:0,type:'scroll',textStyle:{color:'#777',fontSize:9},data:THEMES.map(t=>t.name)},
+    grid:{left:40,right:20,top:30,bottom:40},
+    xAxis:{type:'category',data:months,...axisStyle,axisLabel:{color:'#777',fontSize:9}},yAxis:{type:'value',...axisStyle},
+    series:THEMES.map(t=>({name:t.name,type:'line',smooth:true,showSymbol:false,lineStyle:{color:COLOUR_MAP[t.colour]},itemStyle:{color:COLOUR_MAP[t.colour]},
+      data:months.map(m=>data.filter(r=>r._ym===m&&r._themes.includes(t.id)).length)}))});
+}
+function buildThemeConfig(){
+  const body=$('#themeConfigBody');
+  if(body.dataset.built) return;
+  body.dataset.built='1';
+  body.innerHTML=THEMES.map(t=>`<div class="tcfg-row">
+    <div class="tname" style="color:${COLOUR_MAP[t.colour]}">${esc(t.name)}</div>
+    <textarea data-theme="${t.id}">${esc(t.kw.join(', '))}</textarea>
+    <span class="tag tag-${t.colour}" style="align-self:center">${t.colour}</span>
+  </div>`).join('');
+  body.querySelectorAll('textarea').forEach(ta=>ta.onchange=()=>{
+    const t=themeById(ta.dataset.theme); t.kw=ta.value.split(',').map(s=>s.trim()).filter(Boolean);
+    saveThemes(); analyse(RAW); applyFilters(); toast('Themes updated');
+  });
+}
+$('#resetThemesBtn').onclick=()=>{localStorage.removeItem('ci_theme_config');THEMES=DEFAULT_THEMES.map(t=>({...t}));$('#themeConfigBody').dataset.built='';analyse(RAW);buildThemeConfig();applyFilters();toast('Themes reset');};
+
+/* ---------- INDUSTRY ---------- */
+function renderIndustry(data){
+  if(!data.length){$('#industryTableWrap').innerHTML=emptyHTML();['industryDonut','industryRatingChart'].forEach(id=>{const c=mkChart(id);if(c)c.clear();});$('#spotlightGrid').innerHTML='';return;}
+  const groups=uniq(data.map(r=>r.industryName)).map(n=>{
+    const recs=data.filter(r=>r.industryName===n);
+    const avg=recs.reduce((s,r)=>s+r.reviewRating,0)/recs.length;
+    const crit=recs.filter(r=>r.reviewRating<=2).length;
+    const tf=themeFreq(recs)[0];
+    return {n,count:recs.length,avg,crit,top:tf&&tf.count?tf.name:'—'};
+  }).sort((a,b)=>b.count-a.count);
+
+  // donut
+  const dc=mkChart('industryDonut');
+  dc.setOption({tooltip:{...baseTip,formatter:p=>`${p.name}<br/>${p.value} reviews (${p.percent}%)`},
+    series:[{type:'pie',radius:['45%','72%'],center:['50%','50%'],
+      itemStyle:{borderColor:'#0a0a0a',borderWidth:2},
+      label:{color:'#bbb',fontSize:9},
+      data:groups.map((g,i)=>({name:g.n,value:g.count,itemStyle:{color:donutColour(i)}}))}]});
+  dc.off('click'); dc.on('click',p=>{state.industry=new Set([p.name]);buildFilterBar();applyFilters();toast('Filtered to '+p.name);});
+
+  // rating by industry (top 8)
+  const top8=groups.slice(0,8);
+  const irc=mkChart('industryRatingChart');
+  const ratingsList=[1,2,3,4,5].filter(rt=>data.some(r=>r.reviewRating===rt));
+  const rcolM={1:'#EF4444',2:'#F59E0B',3:'#F5b342',4:'#60A5FA',5:'#00C67A'};
+  irc.setOption({tooltip:{...baseTip,trigger:'axis',axisPointer:{type:'shadow'}},legend:{top:0,textStyle:{color:'#777',fontSize:10},data:ratingsList.map(r=>r+'★')},
+    grid:{left:140,right:20,top:30,bottom:20},
+    xAxis:{type:'value',...axisStyle},yAxis:{type:'category',data:top8.map(g=>g.n),...axisStyle,axisLabel:{color:'#bbb',fontSize:9}},
+    series:ratingsList.map(rt=>({name:rt+'★',type:'bar',stack:'r',itemStyle:{color:rcolM[rt]},data:top8.map(g=>data.filter(r=>r.industryName===g.n&&r.reviewRating===rt).length)}))});
+
+  // table
+  let html='<table class="rtable"><thead><tr><th>Industry</th><th>Reviews</th><th>Avg</th><th>Top Theme</th><th>Critical %</th><th>IFS Relevance</th></tr></thead><tbody>';
+  groups.forEach(g=>{
+    const rel=industryRelevance[g.n]|| (IFS_TARGET_INDUSTRIES.includes(g.n)?'High':'Medium');
+    html+=`<tr class="rrow"><td class="filter-ind" data-ind="${esc(g.n)}" style="color:var(--white)">${esc(g.n)}</td>
+      <td>${g.count}</td><td>${g.avg.toFixed(1)}★</td><td><span class="tag tag-grey">${esc(g.top)}</span></td>
+      <td style="color:${g.crit?'var(--red)':'var(--grey)'}">${(g.crit/g.count*100).toFixed(0)}%</td>
+      <td><span class="relevance-tag rel-${rel}" data-ind="${esc(g.n)}">${rel}</span></td></tr>`;
+  });
+  html+='</tbody></table>';
+  $('#industryTableWrap').innerHTML=html;
+  $('#industryTableWrap').querySelectorAll('.filter-ind').forEach(td=>td.onclick=()=>{state.industry=new Set([td.dataset.ind]);buildFilterBar();applyFilters();toast('Filtered to '+td.dataset.ind);});
+  $('#industryTableWrap').querySelectorAll('.relevance-tag').forEach(tag=>tag.onclick=e=>{e.stopPropagation();const ind=tag.dataset.ind;const order=['High','Medium','Low'];const cur=industryRelevance[ind]||(IFS_TARGET_INDUSTRIES.includes(ind)?'High':'Medium');const next=order[(order.indexOf(cur)+1)%3];industryRelevance[ind]=next;localStorage.setItem('ci_industry_relevance',JSON.stringify(industryRelevance));renderIndustry(filtered());});
+
+  // spotlight
+  const spots=['Manufacturing','Energy and Utilities','Services (non-Government)'];
+  $('#spotlightGrid').innerHTML=spots.map(s=>{
+    const recs=data.filter(r=>r.industryName===s); if(!recs.length) return `<div class="card"><div class="stat-label">${esc(s)}</div><div class="stat-sub">No reviews in current filter</div></div>`;
+    const avg=recs.reduce((a,r)=>a+r.reviewRating,0)/recs.length;
+    const tf=themeFreq(recs).filter(t=>t.count).slice(0,3);
+    const worst=[...recs].sort((a,b)=>a.reviewRating-b.reviewRating)[0];
+    return `<div class="card" style="border-left:3px solid var(--purple)">
+      <div class="stat-label">${esc(s)}</div>
+      <div style="display:flex;gap:14px;margin:8px 0"><div><div class="tc-count" style="font-size:1.3rem">${recs.length}</div><div class="stat-sub">reviews</div></div>
+      <div><div class="tc-count" style="font-size:1.3rem;color:${starColour(avg)}">${avg.toFixed(1)}★</div><div class="stat-sub">avg rating</div></div></div>
+      <div style="margin:6px 0">${tf.map(t=>`<span class="${themeTagClass(t.id)}">${esc(themeById(t.id).name)}</span>`).join('')}</div>
+      <div class="tc-quote" style="cursor:pointer" onclick="openModal(${worst.reviewId})">"${esc((worst.reviewHeadline||'').slice(0,110))}"</div>
+    </div>`;
+  }).join('');
+}
+function donutColour(i){const c=['#A78BFA','#60A5FA','#2DD4BF','#F59E0B','#EF4444','#00C67A','#b9a4fb','#7dd3fc','#fbbf24','#f87171','#34d399','#818cf8'];return c[i%c.length];}
+
+/* ---------- COMPANY SIZE ---------- */
+function renderSize(data){
+  const order=['<50M USD','50M-1B USD','1B-10B USD','10B+ USD',"Gov't/PS/Ed"];
+  const sizes=order.filter(s=>data.some(r=>r.companySize===s));
+  if(!data.length||!sizes.length){['sizeChart','sizeRatingChart'].forEach(id=>{const c=mkChart(id);if(c)c.clear();});$('#sizeThemeWrap').innerHTML=emptyHTML();return;}
+  const sc=mkChart('sizeChart');
+  sc.setOption({tooltip:{...baseTip},grid:{left:90,right:20,top:10,bottom:30},
+    xAxis:{type:'value',...axisStyle},yAxis:{type:'category',data:sizes,...axisStyle,axisLabel:{color:'#bbb',fontSize:10}},
+    series:[{type:'bar',data:sizes.map(s=>({value:data.filter(r=>r.companySize===s).length,itemStyle:{color:IFS_SWEET_SPOT.includes(s)?'#A78BFA':'#60A5FA'}})),label:{show:true,position:'right',color:'#bbb'}}]});
+  const src=mkChart('sizeRatingChart');
+  src.setOption({tooltip:{...baseTip},grid:{left:90,right:20,top:10,bottom:30},
+    xAxis:{type:'value',max:5,...axisStyle},yAxis:{type:'category',data:sizes,...axisStyle,axisLabel:{color:'#bbb',fontSize:10}},
+    series:[{type:'bar',data:sizes.map(s=>{const rs=data.filter(r=>r.companySize===s);const a=rs.reduce((x,r)=>x+r.reviewRating,0)/rs.length;return{value:+a.toFixed(2),itemStyle:{color:starColour(a)}};}),label:{show:true,position:'right',color:'#bbb',formatter:'{c}★'}}]});
+  // size x theme table
+  const topThemes=themeFreq(data).slice(0,5);
+  let html='<table class="exp-table"><thead><tr><th>Size Band</th>'+topThemes.map(t=>`<th>${esc(themeById(t.id).name.split(' ')[0])}</th>`).join('')+'</tr></thead><tbody>';
+  sizes.forEach(s=>{
+    const rs=data.filter(r=>r.companySize===s);
+    html+=`<tr><td style="color:var(--white)">${esc(s)} ${IFS_SWEET_SPOT.includes(s)?'<span class="tag tag-purple">IFS target</span>':''}</td>`+
+      topThemes.map(t=>{const p=rs.length?rs.filter(r=>r._themes.includes(t.id)).length/rs.length*100:0;return `<td style="color:${p>50?'var(--amber)':'var(--light)'}">${p.toFixed(0)}%</td>`;}).join('')+'</tr>';
+  });
+  html+='</tbody></table>';
+  $('#sizeThemeWrap').innerHTML=html;
+}
+
+/* ---------- TIMELINE ---------- */
+function renderTimeline(data){
+  const recs=data.filter(r=>r._ym);
+  if(!recs.length){['volumeChart','rollingChart'].forEach(id=>{const c=mkChart(id);if(c)c.clear();});return;}
+  const months=uniq(recs.map(r=>r._ym)).sort();
+  const vol=months.map(m=>recs.filter(r=>r._ym===m).length);
+  const avgM=months.map(m=>{const rs=recs.filter(r=>r._ym===m);return rs.reduce((s,r)=>s+r.reviewRating,0)/rs.length;});
+  const vc=mkChart('volumeChart');
+  vc.setOption({tooltip:{...baseTip,trigger:'axis',formatter:p=>{const i=p[0].dataIndex;return `${months[i]}<br/>${vol[i]} reviews<br/>avg ${avgM[i].toFixed(1)}★`;}},
+    grid:{left:40,right:20,top:20,bottom:50},
+    xAxis:{type:'category',data:months,...axisStyle,axisLabel:{color:'#777',fontSize:9,rotate:45}},yAxis:{type:'value',...axisStyle},
+    series:[{type:'bar',data:vol.map((v,i)=>({value:v,itemStyle:{color:starColour(avgM[i])}}))}]});
+  // rolling 3-month avg
+  const roll=months.map((m,i)=>{const w=months.slice(Math.max(0,i-2),i+1);const rs=recs.filter(r=>w.includes(r._ym));return rs.length?rs.reduce((s,r)=>s+r.reviewRating,0)/rs.length:null;});
+  const markLines=SAP_EVENTS.filter(e=>months.includes(e.date)||(months[0]<=e.date&&e.date<=months[months.length-1])).map(e=>{
+    let idx=months.indexOf(e.date); if(idx<0){idx=months.findIndex(m=>m>=e.date);}
+    return idx>=0?{xAxis:months[idx],label:{formatter:e.label,color:'#777',fontSize:8,rotate:90,position:'insideEndTop'},lineStyle:{color:'#444',type:'dashed'}}:null;
+  }).filter(Boolean);
+  const rc=mkChart('rollingChart');
+  rc.setOption({tooltip:{...baseTip,trigger:'axis'},grid:{left:40,right:20,top:20,bottom:50},
+    xAxis:{type:'category',data:months,...axisStyle,axisLabel:{color:'#777',fontSize:9,rotate:45}},yAxis:{type:'value',min:1,max:5,...axisStyle},
+    series:[{type:'line',smooth:true,data:roll.map(v=>v?+v.toFixed(2):null),lineStyle:{color:'#A78BFA',width:2},itemStyle:{color:'#A78BFA'},areaStyle:{color:'rgba(167,139,250,.1)'},
+      markLine:{symbol:'none',silent:true,data:markLines}}]});
+}
+
+/* ---------- QUOTE LIBRARY ---------- */
+function renderQuotes(data){
+  let rows=[...data];
+  if(quoteSearch){const q=quoteSearch.toLowerCase();rows=rows.filter(r=>((r.reviewHeadline||'')+' '+(r.reviewSummary||'')).toLowerCase().includes(q));}
+  if(quoteFlaggedOnly) rows=rows.filter(r=>flagged.has(r.reviewId));
+  if(quoteSort==='newest') rows.sort((a,b)=>(b._date||0)-(a._date||0));
+  else if(quoteSort==='oldest') rows.sort((a,b)=>(a._date||0)-(b._date||0));
+  else if(quoteSort==='lowest') rows.sort((a,b)=>a.reviewRating-b.reviewRating);
+  else if(quoteSort==='score') rows.sort((a,b)=>b._score-a._score);
+  const grid=$('#quoteGrid');
+  if(!rows.length){grid.innerHTML=emptyHTML();return;}
+  grid.innerHTML=rows.map(r=>{
+    const full=esc(r.reviewSummary||''); const short=full.length>300?full.slice(0,300)+'…':full;
+    return `<div class="qcard">
+      <span class="stars" style="color:${starColour(r.reviewRating)};font-size:1.1rem">${starStr(r.reviewRating)}</span>
+      <span class="score-badge ${scoreClass(r._score)}" style="float:right">${r._score}</span>
+      <div class="qhead">${esc(r.reviewHeadline)}</div>
+      <div class="qbody" data-full="${full.replace(/"/g,'&quot;')}">${short}${full.length>300?' <span class="readmore" onclick="expandQuote(this)">Read more</span>':''}</div>
+      <div class="qmeta">
+        <span class="tag tag-grey">${esc(r.industryName||'')}</span>
+        <span class="tag tag-grey">${esc(r.companySize||'')}</span>
+        <span class="lang-badge">${r._lang}</span>
+        ${r._themes.slice(0,3).map(id=>`<span class="${themeTagClass(id)}">${esc(themeById(id).name.split(' ')[0])}</span>`).join('')}
+        ${r._marketing.map(m=>`<span class="tag tag-purple">⚑${esc(m)}</span>`).join('')}
+      </div>
+      <div class="qmeta">${esc(r.jobTitle||'')} · ${esc(r.formattedReviewDate)}</div>
+      <div class="qactions">
+        <button class="btn ghost sm" onclick="copyQuote(${r.reviewId})">Copy Quote</button>
+        <button class="btn ghost sm" onclick="copyFull(${r.reviewId})">Copy Full</button>
+        <button class="btn ${flagged.has(r.reviewId)?'primary':'ghost'} sm" onclick="toggleFlag(${r.reviewId});renderQuotes(filtered())">${flagged.has(r.reviewId)?'★ Flagged':'☆ Flag'}</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+window.expandQuote=function(el){const card=el.closest('.qbody');card.innerHTML=card.dataset.full;};
+window.copyFull=function(id){const r=RAW.find(x=>x.reviewId===id);navigator.clipboard.writeText(r.reviewSummary||'');toast('Full review copied');};
+
+/* ---------- SHORTLIST DRAWER ---------- */
+function renderShortlist(){
+  const body=$('#shortlistBody');
+  const recs=RAW.filter(r=>flagged.has(r.reviewId));
+  if(!recs.length){body.innerHTML='<div class="empty" style="padding:30px 10px">No quotes flagged yet.<br><span style="font-size:0.72rem">Flag reviews from the Quote Library or Explorer.</span></div>';return;}
+  body.innerHTML=recs.map(r=>`<div class="flagq"><span class="rm" onclick="toggleFlag(${r.reviewId});renderShortlist()">remove</span>
+    <div class="fqh">${esc(r.reviewHeadline)}</div>
+    <div style="color:var(--grey);font-size:0.68rem">${esc(r.jobTitle||'')}, ${esc(r.industryName||'')} · ${esc(r.formattedReviewDate)}</div>
+    <span class="stars" style="color:${starColour(r.reviewRating)}">${starStr(r.reviewRating)}</span></div>`).join('');
+}
+
+/* ============================ EXPORT ============================ */
+function download(name,content,type){const b=new Blob([content],{type});const u=URL.createObjectURL(b);const a=document.createElement('a');a.href=u;a.download=name;a.click();URL.revokeObjectURL(u);}
+function csvCell(v){v=String(v==null?'':v).replace(/"/g,'""');return `"${v}"`;}
+function reviewsCsv(recs){
+  const head=['reviewId','date','rating','headline','summary','industry','companySize','jobTitle','themes','vendorSeoName','productNames','incentiveType','language','displacementScore'];
+  const rows=recs.map(r=>[r.reviewId,r.formattedReviewDate,r.reviewRating,r.reviewHeadline,r.reviewSummary,r.industryName,r.companySize,r.jobTitle,r._themes.map(t=>themeById(t).name).join('; '),r.vendorSeoName,r.productNames,r.reviewIncentiveCode===1?'Organic':'Incentivised',r._lang,r._score].map(csvCell).join(','));
+  return head.join(',')+'\n'+rows.join('\n');
+}
+function quotesTxt(recs){
+  return recs.map(r=>`"${r.reviewHeadline}"\n— ${r.jobTitle||'Reviewer'}, ${r.industryName||''}, ${r.companySize||''} · Gartner Peer Insights ${r.formattedReviewDate}\nRating: ${r.reviewRating}/5 | Themes: ${r._themes.map(t=>themeById(t).name).join(', ')}\n${'-'.repeat(60)}`).join('\n\n');
+}
+$('#expReviewsCsv').onclick=()=>{download('gartner-reviews-filtered.csv',reviewsCsv(filtered()),'text/csv');toast('CSV downloaded');};
+$('#expThemeCsv').onclick=()=>{
+  const data=filtered();const inds=uniq(data.map(r=>r.industryName)).sort();
+  const head=['industry',...THEMES.map(t=>t.name)];
+  const rows=inds.map(ind=>[ind,...THEMES.map(t=>data.filter(r=>r.industryName===ind&&r._themes.includes(t.id)).length)].map(csvCell).join(','));
+  download('gartner-theme-matrix.csv',head.map(csvCell).join(',')+'\n'+rows.join('\n'),'text/csv');toast('CSV downloaded');
+};
+$('#expQuotesTxt').onclick=()=>{const recs=RAW.filter(r=>flagged.has(r.reviewId));if(!recs.length){toast('No flagged quotes');return;}download('gartner-campaign-quotes.txt',quotesTxt(recs),'text/plain');toast('TXT downloaded');};
+$('#expJson').onclick=()=>{download('gartner-report-snapshot.json',JSON.stringify(filtered().map(r=>({...r,themes:r._themes,displacementScore:r._score,language:r._lang})),null,2),'application/json');toast('JSON downloaded');};
+$('#expShortlistCsv').onclick=()=>{download('gartner-shortlist.csv',reviewsCsv(RAW.filter(r=>flagged.has(r.reviewId))),'text/csv');toast('CSV downloaded');};
+$('#expShortlistTxt').onclick=()=>{download('gartner-shortlist.txt',quotesTxt(RAW.filter(r=>flagged.has(r.reviewId))),'text/plain');toast('TXT downloaded');};
+$('#clearShortlist').onclick=()=>{flagged.clear();localStorage.setItem('ci_flagged_quotes','[]');$('#flagCount').textContent=0;renderShortlist();applyFilters();};
+
+/* ============================ NAV / WIRING ============================ */
+$$('.navlink').forEach(n=>n.onclick=()=>{
+  $$('.navlink').forEach(x=>x.classList.remove('active'));n.classList.add('active');
+  $$('.panel').forEach(p=>p.classList.remove('active'));
+  activeSection=n.dataset.section; $('#'+activeSection).classList.add('active');
+  $('#sidebar').classList.remove('open');
+  renderSection(activeSection,filtered());
+  window.scrollTo({top:0,behavior:'smooth'});
+});
+$('#hamburgerBtn').onclick=()=>$('#sidebar').classList.toggle('open');
+$('#loadBtn').onclick=()=>$('#fileInput').click();
+$('#navUpload').onclick=()=>$('#fileInput').click();
+$('#clearBtn').onclick=()=>{RAW=[];loadDataset(EMBEDDED_DATA,'Embedded sample (reset)');};
+$('#navInfo').onclick=showDatasetInfo;
+$('#navShortlist').onclick=()=>{renderShortlist();$('#shortlistDrawer').classList.add('open');};
+$('#openShortlist').onclick=()=>{renderShortlist();$('#shortlistDrawer').classList.add('open');};
+$('#closeDrawer').onclick=()=>$('#shortlistDrawer').classList.remove('open');
+$('#fileInput').onchange=e=>{
+  const files=[...e.target.files];let merged=[];let done=0;
+  files.forEach(f=>{const rd=new FileReader();rd.onload=()=>{try{const j=JSON.parse(rd.result);merged=merged.concat(Array.isArray(j)?j:[j]);}catch(err){toast('Bad JSON: '+f.name);}if(++done===files.length){loadDataset(RAW.concat(merged),files.map(f=>f.name).join(', '),true);}};rd.readAsText(f);});
+};
+let explSearchT;$('#explorerSearch').oninput=e=>{clearTimeout(explSearchT);explSearchT=setTimeout(()=>{explorerSearch=e.target.value.trim();explorerPage=1;renderExplorer(filtered());},300);};
+$('#explorerSort').querySelectorAll('button').forEach(b=>b.onclick=()=>{explorerSort=b.dataset.sort;explorerPage=1;$('#explorerSort').querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));renderExplorer(filtered());});
+$('#showAllRows').onchange=e=>{explorerShowAll=e.target.checked;explorerPage=1;renderExplorer(filtered());};
+$('#copySelBtn').onclick=()=>{const recs=RAW.filter(r=>selectedRows.has(r.reviewId));if(!recs.length){toast('No rows selected');return;}navigator.clipboard.writeText(quotesTxt(recs));toast(recs.length+' quotes copied');};
+$('#csvSelBtn').onclick=()=>{const recs=RAW.filter(r=>selectedRows.has(r.reviewId));if(!recs.length){toast('No rows selected');return;}download('gartner-selected.csv',reviewsCsv(recs),'text/csv');toast('CSV downloaded');};
+let qsT;$('#quoteSearch').oninput=e=>{clearTimeout(qsT);qsT=setTimeout(()=>{quoteSearch=e.target.value.trim();renderQuotes(filtered());},300);};
+$('#quoteSort').querySelectorAll('button').forEach(b=>b.onclick=()=>{quoteSort=b.dataset.sort;$('#quoteSort').querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));renderQuotes(filtered());});
+$('#flaggedOnly').onchange=e=>{quoteFlaggedOnly=e.target.checked;renderQuotes(filtered());};
+
+function showDatasetInfo(){
+  const v=uniq(RAW.map(r=>r.vendorSeoName)),p=uniq(RAW.map(r=>r.productNames));
+  $('#modalCard').innerHTML=`<span class="mclose" onclick="closeModal()">×</span>
+    <h3>Dataset Info</h3>
+    <div class="mbody" style="white-space:normal">
+      <p><strong>${RAW.length}</strong> reviews loaded.</p>
+      <p><strong>Vendors:</strong> ${v.join(', ')}</p>
+      <p><strong>Products:</strong> ${p.join(', ')}</p>
+      <p><strong>Industries:</strong> ${uniq(RAW.map(r=>r.industryName)).length}</p>
+      <p><strong>Rating split:</strong> ${[1,2,3,4,5].map(rt=>rt+'★: '+RAW.filter(r=>r.reviewRating===rt).length).join(' · ')}</p>
+      <p style="color:var(--grey);font-size:0.72rem;margin-top:10px">Source: Gartner Peer Insights via Apify · INTERNAL USE ONLY</p>
+    </div>`;
+  $('#modalOverlay').classList.add('open');
+}
+
+/* ============================ INIT ============================ */
+function loadDataset(records,name,append){
+  RAW=records.map(r=>({...r}));
+  analyse(RAW);
+  // date range
+  const ds=RAW.map(r=>r._date).filter(Boolean).sort((a,b)=>a-b);
+  state.dMin=ds[0]||null; state.dMax=ds[ds.length-1]||null;
+  state.dMinSel=state.dMin; state.dMaxSel=state.dMax;
+  $('#datasetInfo').textContent=`${RAW.length} reviews · ${name}`;
+  $('#demoBadge').classList.toggle('on',!append);
+  buildFilterBar();
+  $('#themeConfigBody').dataset.built='';
+  applyFilters();
+  renderShortlist();
+  $('#flagCount').textContent=flagged.size;
+}
+const D=new Date();
+$('#pagefoot').textContent=`IFS Competitive Intelligence  |  Data: Gartner Peer Insights via Apify  |  INTERNAL USE ONLY  |  ${D.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}`;
+
+window.addEventListener('resize',()=>{Object.values(charts).forEach(c=>{try{c.resize();}catch(e){}});});
+
+setTimeout(()=>{
+  loadDataset(EMBEDDED_DATA,'Embedded sample (SAP Cloud ERP)');
+  $('#loading').classList.add('hide');
+},120);
+</script>
+</body>
+</html>
