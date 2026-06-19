@@ -50,6 +50,25 @@ add:
 
 (`SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are provided automatically.)
 
+### Sending from an @ifs.com address instead (Office 365 — recommended for deliverability)
+
+If IT provides an `ifs.com` service mailbox with **SMTP AUTH** enabled, send through it
+instead of Gmail — emails are then domain-authenticated and pass IFS's mail filtering.
+Set these secrets **instead of** the `GMAIL_*` ones above:
+
+| Name | Value |
+|------|-------|
+| `SMTP_HOST` | `smtp.office365.com` |
+| `SMTP_PORT` | `587` |
+| `SMTP_USERNAME` | the service mailbox, e.g. `evbooking@ifs.com` |
+| `SMTP_PASSWORD` | that mailbox's password / app password |
+| `EV_FROM_EMAIL` | `IFS EV Charging <evbooking@ifs.com>` |
+| `EV_ADMIN_URL` | `https://dapper-florentine-03e761.netlify.app/ev-booking/admin.html` |
+
+Also point **Supabase Auth → SMTP Settings** at the same server (Host `smtp.office365.com`,
+Port `587`, the mailbox username/password, Sender = the `ifs.com` address) so the **login
+links** send from `ifs.com` too. No code change needed — the functions read these at runtime.
+
 ## Step 3 — Deploy the functions
 
 Easiest with the [Supabase CLI](https://supabase.com/docs/guides/cli):

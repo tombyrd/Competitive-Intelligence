@@ -9,9 +9,13 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { SMTPClient } from "https://deno.land/x/denomailer@1.6.0/mod.ts";
 
-const GMAIL_USER = Deno.env.get("GMAIL_USER")!;
-const GMAIL_APP_PASSWORD = Deno.env.get("GMAIL_APP_PASSWORD")!;
-const FROM = `IFS EV Charging <${GMAIL_USER}>`;
+// SMTP is provider-agnostic. Defaults to Gmail; set SMTP_* secrets to send via
+// Office 365 (smtp.office365.com, port 587) from an @ifs.com mailbox instead.
+const SMTP_HOST = Deno.env.get("SMTP_HOST") ?? "smtp.gmail.com";
+const SMTP_PORT = Number(Deno.env.get("SMTP_PORT") ?? "465");
+const SMTP_USER = Deno.env.get("SMTP_USERNAME") ?? Deno.env.get("GMAIL_USER")!;
+const SMTP_PASS = Deno.env.get("SMTP_PASSWORD") ?? Deno.env.get("GMAIL_APP_PASSWORD")!;
+const FROM = Deno.env.get("EV_FROM_EMAIL") ?? `IFS EV Charging <${SMTP_USER}>`;
 
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL")!,
@@ -33,7 +37,7 @@ function esc(s){ return String(s ?? "").replace(/[&<>"]/g, c => ({ "&":"&amp;","
 
 async function sendEmail(to, subject, html){
   const client = new SMTPClient({
-    connection: { hostname:"smtp.gmail.com", port:465, tls:true, auth:{ username:GMAIL_USER, password:GMAIL_APP_PASSWORD } },
+    connection: { hostname:SMTP_HOST, port:SMTP_PORT, tls: SMTP_PORT===465, auth:{ username:SMTP_USER, password:SMTP_PASS } },
   });
   try { await client.send({ from:FROM, to, subject, html, content:"auto" }); }
   finally { await client.close(); }
