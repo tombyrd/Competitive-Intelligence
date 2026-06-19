@@ -129,6 +129,12 @@ footer{text-align:center;font-size:.7rem;color:var(--muted);margin-top:26px}
     </div>
 
     <div class="field">
+      <label for="email">Email address <span class="req">*</span></label>
+      <input type="email" id="email" name="email" autocomplete="email" required placeholder="you@ifs.com">
+      <div class="hint">We'll email you a reminder near the end of your slot to move your car.</div>
+    </div>
+
+    <div class="field">
       <label for="reg">Vehicle registration <span class="req">*</span></label>
       <input type="text" id="reg" name="reg" required placeholder="e.g. AB12 CDE"
              autocapitalize="characters" maxlength="10" style="text-transform:uppercase">
@@ -198,11 +204,17 @@ footer{text-align:center;font-size:.7rem;color:var(--muted);margin-top:26px}
   }
   const today = new Date();
   const todayStr = localDate(today);
+
+  function isWeekend(ds){ const d=new Date(ds+"T00:00:00").getDay(); return d===0 || d===6; }
+  function nextWeekday(ds){ const dt=new Date(ds+"T00:00:00"); while([0,6].includes(dt.getDay())) dt.setDate(dt.getDate()+1); return localDate(dt); }
+  // Default to today, or the next weekday if today is a weekend.
+  const startStr = isWeekend(todayStr) ? nextWeekday(todayStr) : todayStr;
   dateInput.min = todayStr;
-  dateInput.value = todayStr;
+  dateInput.value = startStr;
 
   function selectedBay(){ const r=document.querySelector('input[name="bay"]:checked'); return r?r.value:""; }
-  function slotStartHour(slot){ return parseInt(slot.slice(0,2),10); }
+  // Start time of a slot as minutes-into-the-day (e.g. "07:30 – 09:30" -> 450).
+  function slotStartMins(slot){ const m=slot.match(/^(\d{1,2}):(\d{2})/); return m ? (+m[1])*60 + (+m[2]) : 0; }
 
   function showError(msg){ errorBox.textContent=msg; errorBox.classList.add("show"); }
   function clearError(){ errorBox.classList.remove("show"); }
@@ -215,6 +227,13 @@ footer{text-align:center;font-size:.7rem;color:var(--muted);margin-top:26px}
       slotSel.disabled = true;
       slotSel.innerHTML = '<option value="">Pick a bay and date first…</option>';
       slotStatus.textContent = ""; slotStatus.className="slot-status";
+      return;
+    }
+    if (isWeekend(date)){
+      slotSel.disabled = true;
+      slotSel.innerHTML = '<option value="">Weekends unavailable</option>';
+      slotStatus.textContent = "Bookings are Monday to Friday only — please choose a weekday.";
+      slotStatus.className = "slot-status";
       return;
     }
 
@@ -233,7 +252,8 @@ footer{text-align:center;font-size:.7rem;color:var(--muted);margin-top:26px}
     }
 
     const isToday = date === localDate(new Date());
-    const nowHour = new Date().getHours();
+    const nowObj = new Date();
+    const nowMins = nowObj.getHours()*60 + nowObj.getMinutes();
 
     slotSel.disabled = false;
     const placeholder = document.createElement("option");
@@ -245,7 +265,7 @@ footer{text-align:center;font-size:.7rem;color:var(--muted);margin-top:26px}
       const opt = document.createElement("option");
       opt.value = slot;
       const taken = approved.includes(slot);
-      const past = isToday && slotStartHour(slot) <= nowHour;
+      const past = isToday && slotStartMins(slot) <= nowMins;
       if (taken){ opt.disabled=true; opt.textContent = slot+"  — already booked"; }
       else if (past){ opt.disabled=true; opt.textContent = slot+"  — past"; }
       else { opt.textContent = slot; availableCount++; }
@@ -270,6 +290,7 @@ footer{text-align:center;font-size:.7rem;color:var(--muted);margin-top:26px}
     clearError();
     const name = $("name").value.trim();
     const phone = $("phone").value.trim();
+    const email = $("email").value.trim();
     const reg = $("reg").value.trim().toUpperCase();
     const bay = selectedBay();
     const date = dateInput.value;
@@ -277,10 +298,12 @@ footer{text-align:center;font-size:.7rem;color:var(--muted);margin-top:26px}
 
     if (!name) return showError("Please enter your full name.");
     if (!phone) return showError("Please enter a phone number.");
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return showError("Please enter a valid email address.");
     if (!reg) return showError("Please enter your vehicle registration.");
     if (!bay) return showError("Please choose a charging bay.");
     if (!date) return showError("Please choose a date.");
     if (date < todayStr) return showError("Please choose today or a future date.");
+    if (isWeekend(date)) return showError("Bookings are Monday to Friday only.");
     if (!slot) return showError("Please choose a time slot.");
     if (!sb) return showError("App is not configured — see SETUP.md.");
 
@@ -295,7 +318,7 @@ footer{text-align:center;font-size:.7rem;color:var(--muted);margin-top:26px}
         return;
       }
       const { error } = await sb.from("bookings").insert({
-        name, phone, reg, bay: Number(bay), date, slot, status:"pending"
+        name, phone, email, reg, bay: Number(bay), date, slot, status:"pending"
       });
       if (error) throw error;
       showConfirmation({name, reg, bay, date, slot});
@@ -323,7 +346,7 @@ footer{text-align:center;font-size:.7rem;color:var(--muted);margin-top:26px}
   function row(k,v){ return '<div class="row"><span class="k">'+k+'</span><span class="v">'+v+'</span></div>'; }
 
   $("again").addEventListener("click", ()=>{
-    form.reset(); dateInput.value = todayStr;
+    form.reset(); dateInput.value = startStr;
     confirmBox.classList.remove("show"); form.style.display="block";
     refreshSlots();
   });
@@ -332,7 +355,7 @@ footer{text-align:center;font-size:.7rem;color:var(--muted);margin-top:26px}
   const params = new URLSearchParams(location.search);
   const pBay = params.get("bay"), pDate = params.get("date"), pSlot = params.get("slot");
   if (pBay){ const r = document.querySelector('input[name="bay"][value="'+pBay+'"]'); if (r) r.checked = true; }
-  if (pDate && pDate >= todayStr){ dateInput.value = pDate; }
+  if (pDate && pDate >= todayStr && !isWeekend(pDate)){ dateInput.value = pDate; }
 
   (async function(){
     await refreshSlots();

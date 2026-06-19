@@ -13,12 +13,11 @@ window.EV_CONFIG = {
   SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InprbW1henl5YmFienRxdnZlZnBlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3OTE0NTYsImV4cCI6MjA5NzM2NzQ1Nn0.6mf7pllca8KlAhbm7qXs-nlPbRwFvAQhlWxjgQ4-wtA"
 };
 
-// The six bookable 2-hour slots. Edit here if working hours change.
+// The bookable 2-hour slots (Mon–Fri). Edit here if working hours change.
 window.EV_SLOTS = [
-  "07:00 – 09:00",
-  "09:00 – 11:00",
-  "11:00 – 13:00",
-  "13:00 – 15:00",
-  "15:00 – 17:00",
-  "17:00 – 19:00"
+  "07:30 – 09:30",
+  "09:30 – 11:30",
+  "11:30 – 13:30",
+  "13:30 – 15:30",
+  "15:30 – 17:30"
 ];

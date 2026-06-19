@@ -32,6 +32,25 @@ select cron.schedule(
   $$
 );
 
+-- ── Slot reminder: every minute, email bookers ~5 min before their slot ends ──
+select cron.unschedule('ev-slot-reminder')
+  where exists (select 1 from cron.job where jobname = 'ev-slot-reminder');
+
+select cron.schedule(
+  'ev-slot-reminder',
+  '* * * * *',
+  $$
+    select net.http_post(
+      url     := 'https://zkmmazyybabztqvvefpe.functions.supabase.co/slot-reminder',
+      headers := jsonb_build_object(
+        'Content-Type', 'application/json',
+        'Authorization', 'Bearer YOUR-ANON-PUBLIC-KEY'
+      ),
+      body := '{}'::jsonb
+    );
+  $$
+);
+
 -- Handy: list scheduled jobs / their last runs
 --   select * from cron.job;
 --   select * from cron.job_run_details order by start_time desc limit 10;

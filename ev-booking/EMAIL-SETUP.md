@@ -7,8 +7,11 @@ This adds two emails, both sent to everyone in the `admins` table:
    fired by a Database Webhook on insert.)
 2. **Daily 7am digest** — a list of the day's approved bookings. (Edge Function
    `daily-digest`, fired by a `pg_cron` schedule.)
+3. **Slot reminder** — emails each booker ~5 minutes before their slot **ends**,
+   reminding them to move their car. (Edge Function `slot-reminder`, fired by a
+   per-minute `pg_cron` schedule; uses UK local time so it's correct in BST.)
 
-Both functions live in `supabase/functions/` and send through **Gmail SMTP** — no
+All functions live in `supabase/functions/` and send through **Gmail SMTP** — no
 domain verification or IT involvement needed.
 
 > Emails arrive from a `@gmail.com` address. For an internal tool that's usually fine;
@@ -58,6 +61,7 @@ supabase link --project-ref zkmmazyybabztqvvefpe
 
 supabase functions deploy notify-new-booking
 supabase functions deploy daily-digest --no-verify-jwt
+supabase functions deploy slot-reminder --no-verify-jwt
 ```
 
 (`--no-verify-jwt` on the digest lets pg_cron call it; `notify-new-booking` keeps
@@ -75,12 +79,14 @@ Supabase → **Database** → **Webhooks** → **Create**:
 
 Now every new booking emails facilities.
 
-## Step 5 — Schedule the daily digest
+## Step 5 — Schedule the digest + reminder
 
-1. Open [`email-setup.sql`](email-setup.sql), replace `YOUR-ANON-PUBLIC-KEY` with your
-   project's anon key (the same one in `config.js`), and run it in the SQL Editor.
-2. That schedules a 07:00 UTC daily call. (DST note is in the file — tell me if you
-   want a fixed 07:00 *UK local* time instead.)
+1. Open [`email-setup.sql`](email-setup.sql), replace **both** `YOUR-ANON-PUBLIC-KEY`
+   placeholders with your project's anon key (the same one in `config.js`), and run it
+   in the SQL Editor.
+2. That schedules the **07:00 UTC daily digest** and the **per-minute slot reminder**.
+   (DST note for the digest is in the file — tell me if you want a fixed 07:00 *UK local*
+   time instead. The reminder already uses UK local time.)
 
 ## Step 6 — Test
 

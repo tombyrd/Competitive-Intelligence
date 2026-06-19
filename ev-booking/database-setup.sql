@@ -9,19 +9,23 @@
 create extension if not exists pgcrypto;
 
 create table if not exists bookings (
-  id          uuid primary key default gen_random_uuid(),
-  name        text not null,
-  phone       text not null,
-  reg         text,
-  bay         smallint not null check (bay in (1, 2)),
-  date        date not null,
-  slot        text not null,
-  status      text not null default 'pending' check (status in ('pending','approved','rejected')),
-  created_at  timestamptz not null default now()
+  id            uuid primary key default gen_random_uuid(),
+  name          text not null,
+  phone         text not null,
+  email         text,
+  reg           text,
+  bay           smallint not null check (bay in (1, 2)),
+  date          date not null,
+  slot          text not null,
+  status        text not null default 'pending' check (status in ('pending','approved','rejected')),
+  reminder_sent boolean not null default false,
+  created_at    timestamptz not null default now()
 );
 
--- Add the vehicle registration column to an existing table (no-op if present).
+-- Add newer columns to an existing table (no-ops if already present).
 alter table bookings add column if not exists reg text;
+alter table bookings add column if not exists email text;
+alter table bookings add column if not exists reminder_sent boolean not null default false;
 
 -- Safety net: only ONE approved booking per bay + date + slot (no double-booking).
 create unique index if not exists uniq_approved_slot

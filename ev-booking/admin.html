@@ -163,10 +163,10 @@ td.name{font-weight:600}
   <div class="tablewrap">
     <table>
       <thead>
-        <tr><th>Name</th><th>Phone</th><th>Vehicle</th><th>Bay</th><th>Date</th><th>Time slot</th><th>Status</th><th>Actions</th></tr>
+        <tr><th>Name</th><th>Phone</th><th>Email</th><th>Vehicle</th><th>Bay</th><th>Date</th><th>Time slot</th><th>Status</th><th>Actions</th></tr>
       </thead>
       <tbody id="tbody">
-        <tr><td colspan="8" class="loading">Loading bookings…</td></tr>
+        <tr><td colspan="9" class="loading">Loading bookings…</td></tr>
       </tbody>
     </table>
   </div>
@@ -327,7 +327,7 @@ td.name{font-weight:600}
     const tb = $("tbody");
 
     if (!rows.length){
-      tb.innerHTML = '<tr><td colspan="8" class="empty">No '+(filter==="all"?"":filter+" ")+'bookings yet.</td></tr>';
+      tb.innerHTML = '<tr><td colspan="9" class="empty">No '+(filter==="all"?"":filter+" ")+'bookings yet.</td></tr>';
       return;
     }
 
@@ -348,6 +348,7 @@ td.name{font-weight:600}
       return '<tr>'+
         '<td class="name" data-label="Name">'+esc(b.name)+'</td>'+
         '<td class="phone" data-label="Phone"><a href="tel:'+phone+'">'+phone+'</a></td>'+
+        '<td class="phone" data-label="Email">'+(b.email?'<a href="mailto:'+esc(b.email)+'">'+esc(b.email)+'</a>':'<span class="muted-dash">—</span>')+'</td>'+
         '<td data-label="Vehicle">'+esc(b.reg)+'</td>'+
         '<td data-label="Bay">Bay '+esc(b.bay)+'</td>'+
         '<td data-label="Date">'+fmtDate(b.date)+'</td>'+

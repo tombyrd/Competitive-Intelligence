@@ -159,13 +159,17 @@ footer{text-align:center;font-size:.7rem;color:var(--muted);margin-top:26px}
   const DOW = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
 
   function localDate(d){ return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
+  function isWeekend(ds){ const d=new Date(ds+"T00:00:00").getDay(); return d===0 || d===6; }
+  function nextWeekday(ds){ const dt=new Date(ds+"T00:00:00"); while([0,6].includes(dt.getDay())) dt.setDate(dt.getDate()+1); return localDate(dt); }
   const today = new Date();
   const todayStr = localDate(today);
-  let selectedStr = todayStr;
-  let viewYear = today.getFullYear(), viewMonth = today.getMonth();
+  // Start on today, or the next weekday if today is a weekend.
+  let selectedStr = isWeekend(todayStr) ? nextWeekday(todayStr) : todayStr;
+  let viewYear = new Date(selectedStr+"T00:00:00").getFullYear(), viewMonth = new Date(selectedStr+"T00:00:00").getMonth();
 
   function esc(s){ return String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
-  function slotStartHour(slot){ return parseInt(slot.slice(0,2),10); }
+  // Start time of a slot as minutes-into-the-day (e.g. "07:30 – 09:30" -> 450).
+  function slotStartMins(slot){ const m=slot.match(/^(\d{1,2}):(\d{2})/); return m ? (+m[1])*60 + (+m[2]) : 0; }
   function prettyDate(d){ const dt=new Date(d+"T00:00:00"); return dt.toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"long",year:"numeric"}); }
   function banner(m){ const b=$("banner"); if(!m){b.classList.remove("show");return;} b.textContent=m; b.classList.add("show"); }
 
@@ -184,8 +188,8 @@ footer{text-align:center;font-size:.7rem;color:var(--muted);margin-top:26px}
       const c=document.createElement("button"); c.className="cal-day"; c.textContent=d;
       if(ds===todayStr) c.classList.add("today");
       if(ds===selectedStr) c.classList.add("selected");
-      if(ds < todayStr){
-        c.disabled = true;   // past days can't be booked
+      if(ds < todayStr || isWeekend(ds)){
+        c.disabled = true;   // past days and weekends can't be booked
       } else {
         c.addEventListener("click",()=>{ selectedStr=ds; renderCalendar(); loadDay(); });
       }
@@ -221,13 +225,14 @@ footer{text-align:center;font-size:.7rem;color:var(--muted);margin-top:26px}
   function renderDay(rows){
     const isToday = selectedStr===todayStr;
     const dayIsPast = selectedStr < todayStr;
-    const nowHour = new Date().getHours();
+    const nowObj = new Date();
+    const nowMins = nowObj.getHours()*60 + nowObj.getMinutes();
     // index bookings by bay -> slot
     function approvedFor(bay,slot){ return rows.find(r=>Number(r.bay)===bay && r.slot===slot && r.status==="approved"); }
     function pendingFor(bay,slot){ return rows.filter(r=>Number(r.bay)===bay && r.slot===slot && r.status==="pending"); }
 
     function cell(bay, slot){
-      const past = dayIsPast || (isToday && slotStartHour(slot) <= nowHour);
+      const past = dayIsPast || (isToday && slotStartMins(slot) <= nowMins);
       const appr = approvedFor(bay, slot);
       if(appr){
         if(isAdmin){
@@ -277,7 +282,8 @@ footer{text-align:center;font-size:.7rem;color:var(--muted);margin-top:26px}
 
   // ── Nav ──
   function shiftDay(n){
-    const d=new Date(selectedStr+"T00:00:00"); d.setDate(d.getDate()+n);
+    const d=new Date(selectedStr+"T00:00:00");
+    do { d.setDate(d.getDate()+n); } while([0,6].includes(d.getDay()));   // skip weekends
     const ns=localDate(d);
     if(ns < todayStr) return;   // never navigate into the past
     selectedStr=ns; viewYear=d.getFullYear(); viewMonth=d.getMonth();
