@@ -27,7 +27,8 @@ header{display:flex;align-items:center;gap:12px;margin-bottom:8px}
   letter-spacing:.04em;flex-shrink:0}
 header h1{font-size:1.15rem;font-weight:700;letter-spacing:-0.01em}
 header .sub{font-size:.78rem;color:var(--muted)}
-.adminlink{margin-left:auto;font-size:.72rem;color:var(--muted);text-decoration:none;border:1px solid var(--border);padding:5px 10px;border-radius:8px}
+.topnav{margin-left:auto;display:flex;gap:8px}
+.adminlink{font-size:.72rem;color:var(--muted);text-decoration:none;border:1px solid var(--border);padding:5px 10px;border-radius:8px;white-space:nowrap}
 .adminlink:hover{border-color:var(--border2);color:var(--text)}
 
 .card{background:var(--surface);border:1px solid var(--border);border-radius:16px;
@@ -103,7 +104,10 @@ footer{text-align:center;font-size:.7rem;color:var(--muted);margin-top:26px}
       <h1>EV Charging Booking</h1>
       <div class="sub">Staines office · 2 charging bays</div>
     </div>
-    <a class="adminlink" href="admin.html">Facilities</a>
+    <nav class="topnav">
+      <a class="adminlink" href="day.html">Availability</a>
+      <a class="adminlink" href="admin.html">Facilities</a>
+    </nav>
   </header>
 
   <div id="configWarn" class="config-warn">
@@ -243,7 +247,7 @@ footer{text-align:center;font-size:.7rem;color:var(--muted);margin-top:26px}
       const taken = approved.includes(slot);
       const past = isToday && slotStartHour(slot) <= nowHour;
       if (taken){ opt.disabled=true; opt.textContent = slot+"  — already booked"; }
-      else if (past){ opt.disabled=true; opt.textContent = slot+"  — passed"; }
+      else if (past){ opt.disabled=true; opt.textContent = slot+"  — past"; }
       else { opt.textContent = slot; availableCount++; }
       slotSel.appendChild(opt);
     });
@@ -324,7 +328,20 @@ footer{text-align:center;font-size:.7rem;color:var(--muted);margin-top:26px}
     refreshSlots();
   });
 
-  refreshSlots();
+  // Prefill from the availability page links: ?bay=1&date=YYYY-MM-DD&slot=...
+  const params = new URLSearchParams(location.search);
+  const pBay = params.get("bay"), pDate = params.get("date"), pSlot = params.get("slot");
+  if (pBay){ const r = document.querySelector('input[name="bay"][value="'+pBay+'"]'); if (r) r.checked = true; }
+  if (pDate && pDate >= todayStr){ dateInput.value = pDate; }
+
+  (async function(){
+    await refreshSlots();
+    if (pSlot){
+      const opt = Array.from(slotSel.options).find(o => o.value === pSlot && !o.disabled);
+      if (opt){ slotSel.value = pSlot; }
+    }
+    if (pBay || pSlot){ $("name").focus(); }
+  })();
 })();
 </script>
 </body>
