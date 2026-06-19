@@ -42,6 +42,8 @@ header .sub{font-size:.78rem;color:var(--muted)}
 .cal-nav{display:flex;gap:6px}
 .iconbtn{width:30px;height:30px;border:1px solid var(--border2);background:var(--surface);border-radius:8px;cursor:pointer;font-size:1rem;line-height:1;color:var(--text)}
 .iconbtn:hover{border-color:var(--brand);color:var(--brand)}
+.iconbtn:disabled{opacity:.4;cursor:default}
+.iconbtn:disabled:hover{border-color:var(--border2);color:var(--text)}
 .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
 .cal-grid .dow{font-size:.66rem;color:var(--muted);text-align:center;padding:4px 0;font-weight:600;text-transform:uppercase}
 .cal-day{aspect-ratio:1;border:1px solid transparent;border-radius:8px;background:none;cursor:pointer;
@@ -49,6 +51,8 @@ header .sub{font-size:.78rem;color:var(--muted)}
 .cal-day:hover{background:var(--brand-bg)}
 .cal-day.other{color:#cbd5e1;cursor:default}
 .cal-day.other:hover{background:none}
+.cal-day:disabled{color:#cbd5e1;cursor:default}
+.cal-day:disabled:hover{background:none}
 .cal-day.today{border-color:var(--brand)}
 .cal-day.selected{background:var(--brand);color:#fff;font-weight:700}
 .cal-day.selected:hover{background:var(--brand-d)}
@@ -180,7 +184,11 @@ footer{text-align:center;font-size:.7rem;color:var(--muted);margin-top:26px}
       const c=document.createElement("button"); c.className="cal-day"; c.textContent=d;
       if(ds===todayStr) c.classList.add("today");
       if(ds===selectedStr) c.classList.add("selected");
-      c.addEventListener("click",()=>{ selectedStr=ds; renderCalendar(); loadDay(); });
+      if(ds < todayStr){
+        c.disabled = true;   // past days can't be booked
+      } else {
+        c.addEventListener("click",()=>{ selectedStr=ds; renderCalendar(); loadDay(); });
+      }
       cal.appendChild(c);
     }
   }
@@ -202,6 +210,7 @@ footer{text-align:center;font-size:.7rem;color:var(--muted);margin-top:26px}
 
   async function loadDay(){
     $("dtitle").textContent = prettyDate(selectedStr);
+    $("prevDay").disabled = (selectedStr <= todayStr);   // can't view/book past days
     $("day").innerHTML = '<div class="loading">Loading…</div>';
     let rows=[];
     try{ rows = await fetchDay(selectedStr); banner(""); }
@@ -211,13 +220,14 @@ footer{text-align:center;font-size:.7rem;color:var(--muted);margin-top:26px}
 
   function renderDay(rows){
     const isToday = selectedStr===todayStr;
+    const dayIsPast = selectedStr < todayStr;
     const nowHour = new Date().getHours();
     // index bookings by bay -> slot
     function approvedFor(bay,slot){ return rows.find(r=>Number(r.bay)===bay && r.slot===slot && r.status==="approved"); }
     function pendingFor(bay,slot){ return rows.filter(r=>Number(r.bay)===bay && r.slot===slot && r.status==="pending"); }
 
     function cell(bay, slot){
-      const past = isToday && slotStartHour(slot) <= nowHour;
+      const past = dayIsPast || (isToday && slotStartHour(slot) <= nowHour);
       const appr = approvedFor(bay, slot);
       if(appr){
         if(isAdmin){
@@ -268,7 +278,9 @@ footer{text-align:center;font-size:.7rem;color:var(--muted);margin-top:26px}
   // ── Nav ──
   function shiftDay(n){
     const d=new Date(selectedStr+"T00:00:00"); d.setDate(d.getDate()+n);
-    selectedStr=localDate(d); viewYear=d.getFullYear(); viewMonth=d.getMonth();
+    const ns=localDate(d);
+    if(ns < todayStr) return;   // never navigate into the past
+    selectedStr=ns; viewYear=d.getFullYear(); viewMonth=d.getMonth();
     renderCalendar(); loadDay();
   }
   $("prevDay").addEventListener("click",()=>shiftDay(-1));
