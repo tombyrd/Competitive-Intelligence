@@ -70,6 +70,8 @@ button.submit:disabled{opacity:.55;cursor:not-allowed}
 .error{background:var(--red-bg);color:var(--red);border:1px solid #fecaca;
   border-radius:10px;padding:11px 13px;font-size:.85rem;margin-bottom:16px;display:none}
 .error.show{display:block}
+.infonote{background:var(--brand-bg);border:1px solid #e6d4fb;color:var(--brand-d);
+  border-radius:10px;padding:12px 14px;font-size:.82rem;line-height:1.5;margin-bottom:18px}
 
 /* confirmation */
 .confirm{display:none;text-align:center;padding:8px 4px}
@@ -116,6 +118,11 @@ footer{text-align:center;font-size:.7rem;color:var(--muted);margin-top:26px}
 
   <!-- Booking form -->
   <form id="form" class="card" novalidate>
+    <div class="infonote">
+      If you are a visitor, simply enter your business email address to book a space. All bookings are
+      reviewed by facilities and you'll receive an email when it's been approved. If you don't receive an
+      email, please check your junk folder.
+    </div>
     <div id="error" class="error"></div>
 
     <div class="field">
